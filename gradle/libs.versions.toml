@@ -21,6 +21,8 @@ androidxNavigation = "2.8.4"
 kotlinxCoroutines = "1.9.0"
 kotlinxSerializationJson = "1.7.3"
 googleServices = "4.4.2"
+calendar = "2.6.0"
+androidDesugarJdkLibs = "2.1.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -40,6 +42,12 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+
+# desugaring
+android-desugarJdkLibs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "androidDesugarJdkLibs" }
+
+# calendar
+kizitonwose-calendar = { group = "com.kizitonwose.calendar", name = "compose", version.ref = "calendar" }
 
 # room
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }

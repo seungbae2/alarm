@@ -19,6 +19,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -33,6 +34,8 @@ android {
         }
     }
     compileOptions {
+        // Enable support for the new language APIs
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -80,6 +83,12 @@ dependencies {
 
     // Date/Time
     implementation(libs.kotlinx.datetime)
+
+    // Calendar
+    implementation(libs.kizitonwose.calendar)
+
+    // Desugaring
+    coreLibraryDesugaring(libs.android.desugarJdkLibs)
 
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)

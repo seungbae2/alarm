@@ -16,11 +16,7 @@ fun AppNavGraph(
         startDestination = startDestination
     ) {
         composable("schedule") {
-            ScheduleScreen(
-                onNavigateToAlarm = { alarmId ->
-                    navController.navigate("alarm/$alarmId")
-                }
-            )
+            ScheduleScreen()
         }
     }
 } 
