@@ -6,11 +6,14 @@ import com.sb.alarm.data.datasource.database.mapper.toDomainModel
 import com.sb.alarm.data.datasource.database.mapper.toEntity
 import com.sb.alarm.domain.model.Alarm
 import com.sb.alarm.domain.repository.AlarmRepository
+import com.sb.alarm.shared.RepeatType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 class AlarmRepositoryImpl @Inject constructor(
@@ -32,5 +35,23 @@ class AlarmRepositoryImpl @Inject constructor(
 
     override suspend fun addAlarm(alarm: Alarm): Long {
         return alarmDao.insert(alarm.toEntity())
+    }
+    
+    override suspend fun hasDuplicateAlarm(
+        hour: Int,
+        minute: Int,
+        repeatType: RepeatType,
+        repeatInterval: Int,
+        repeatDaysOfWeek: List<Int>?
+    ): Boolean {
+        val repeatDaysOfWeekJson = repeatDaysOfWeek?.let { Json.encodeToString(it) }
+        val duplicateCount = alarmDao.countDuplicateAlarms(
+            hour = hour,
+            minute = minute,
+            repeatType = repeatType.name,
+            repeatInterval = repeatInterval,
+            repeatDaysOfWeek = repeatDaysOfWeekJson
+        )
+        return duplicateCount > 0
     }
 } 

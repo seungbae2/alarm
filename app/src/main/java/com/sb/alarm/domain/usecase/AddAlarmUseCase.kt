@@ -19,7 +19,7 @@ class AddAlarmUseCase @Inject constructor(
      * @param startDate 알람 시작일 (밀리초 타임스탬프, null이면 현재 시간)
      * @param endDate 알람 종료일 (밀리초 타임스탬프, null이면 무기한)
      * @param isActive 알람 활성화 여부 (기본값: true)
-     * @return 생성된 알람의 ID
+     * @return 생성된 알람의 ID, 중복 알람이 있는 경우 -1L 반환
      */
     suspend operator fun invoke(
         medicationName: String,
@@ -32,6 +32,19 @@ class AddAlarmUseCase @Inject constructor(
         endDate: Long? = null,
         isActive: Boolean = true
     ): Long {
+        // 중복 알람 검사
+        val hasDuplicate = alarmRepository.hasDuplicateAlarm(
+            hour = hour,
+            minute = minute,
+            repeatType = repeatType,
+            repeatInterval = repeatInterval,
+            repeatDaysOfWeek = repeatDaysOfWeek
+        )
+        
+        if (hasDuplicate) {
+            return -1L // 중복 알람이 있음을 나타내는 값
+        }
+        
         val alarm = Alarm(
             medicationName = medicationName,
             hour = hour,

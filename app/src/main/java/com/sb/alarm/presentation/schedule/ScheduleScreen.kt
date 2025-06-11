@@ -23,6 +23,8 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -69,12 +71,22 @@ fun ScheduleScreen(
     viewModel: ScheduleViewModel = hiltViewModel(),
 ) {
     val selectedDateAlarms by viewModel.selectedDateAlarms.collectAsState()
+    val message by viewModel.message.collectAsState()
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var selectedDate by remember { mutableStateOf(today) }
 
     LaunchedEffect(selectedDate) {
         viewModel.loadAlarmsForDate(selectedDate)
+    }
+    
+    // 메시지 스낵바 표시
+    LaunchedEffect(message) {
+        message?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearMessage()
+        }
     }
 
     // kotlinx.datetime으로 날짜 계산 후 java.time으로 변환
@@ -93,6 +105,9 @@ fun ScheduleScreen(
             TopAppBar(
                 title = { Text("알람 스케줄") }
             )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         },
         floatingActionButton = {
             FloatingActionButton(

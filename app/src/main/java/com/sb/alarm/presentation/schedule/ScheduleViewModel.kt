@@ -22,6 +22,9 @@ class ScheduleViewModel @Inject constructor(
 
     private val _selectedDateAlarms = MutableStateFlow<List<Alarm>>(emptyList())
     val selectedDateAlarms: StateFlow<List<Alarm>> = _selectedDateAlarms.asStateFlow()
+    
+    private val _message = MutableStateFlow<String?>(null)
+    val message: StateFlow<String?> = _message.asStateFlow()
 
     fun loadAlarmsForDate(date: LocalDate) {
         viewModelScope.launch {
@@ -37,7 +40,7 @@ class ScheduleViewModel @Inject constructor(
      */
     fun addDailyNoonAlarm() {
         viewModelScope.launch {
-            addAlarmUseCase.invoke(
+            val result = addAlarmUseCase.invoke(
                 medicationName = "매일 점심 복용",
                 hour = 12,
                 minute = 0,
@@ -48,6 +51,19 @@ class ScheduleViewModel @Inject constructor(
                 endDate = null, // 무기한
                 isActive = true
             )
+            
+            if (result == -1L) {
+                _message.value = "동일한 알람이 이미 존재합니다."
+            } else {
+                _message.value = "알람이 성공적으로 추가되었습니다."
+            }
         }
+    }
+    
+    /**
+     * 메시지 확인 후 제거
+     */
+    fun clearMessage() {
+        _message.value = null
     }
 } 
