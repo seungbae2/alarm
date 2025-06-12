@@ -1,9 +1,11 @@
 package com.sb.alarm.domain.usecase
 
 import com.sb.alarm.domain.model.Alarm
+import com.sb.alarm.domain.model.AlarmWithStatus
 import com.sb.alarm.domain.repository.AlarmRepository
 import com.sb.alarm.shared.RepeatType
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.Instant
@@ -15,10 +17,22 @@ import javax.inject.Inject
 class GetAlarmsByDateUseCase @Inject constructor(
     private val alarmRepository: AlarmRepository,
 ) {
-    operator fun invoke(date: LocalDate): Flow<List<Alarm>> {
-        return alarmRepository.getActiveAlarmsForDateRange(date).map { filteredAlarms ->
-            filteredAlarms.filter { alarm ->
+    operator fun invoke(date: LocalDate): Flow<List<AlarmWithStatus>> {
+        val dateString = date.toString() // "2024-01-15" 형식
+        
+        return combine(
+            alarmRepository.getActiveAlarmsForDateRange(date),
+            alarmRepository.getHistoryByDate(dateString)
+        ) { alarms, histories ->
+            alarms.filter { alarm ->
                 shouldAlarmTriggerOnDate(alarm, date)
+            }.map { alarm ->
+                val history = histories.find { it.alarmId == alarm.id }
+                AlarmWithStatus(
+                    alarm = alarm,
+                    takeStatus = history?.status,
+                    actionTimestamp = history?.actionTimestamp
+                )
             }
         }
     }

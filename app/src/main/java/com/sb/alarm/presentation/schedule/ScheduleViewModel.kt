@@ -2,9 +2,10 @@ package com.sb.alarm.presentation.schedule
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sb.alarm.domain.model.Alarm
+import com.sb.alarm.domain.model.AlarmWithStatus
 import com.sb.alarm.domain.usecase.AddAlarmUseCase
 import com.sb.alarm.domain.usecase.GetAlarmsByDateUseCase
+import com.sb.alarm.domain.usecase.UpdateAlarmStatusUseCase
 import com.sb.alarm.shared.RepeatType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,19 +19,20 @@ import javax.inject.Inject
 class ScheduleViewModel @Inject constructor(
     private val addAlarmUseCase: AddAlarmUseCase,
     private val getAlarmsByDateUseCase: GetAlarmsByDateUseCase,
+    private val updateAlarmStatusUseCase: UpdateAlarmStatusUseCase,
 ) : ViewModel() {
 
-    private val _selectedDateAlarms = MutableStateFlow<List<Alarm>>(emptyList())
-    val selectedDateAlarms: StateFlow<List<Alarm>> = _selectedDateAlarms.asStateFlow()
-    
+    private val _selectedDateAlarms = MutableStateFlow<List<AlarmWithStatus>>(emptyList())
+    val selectedDateAlarms: StateFlow<List<AlarmWithStatus>> = _selectedDateAlarms.asStateFlow()
+
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
     fun loadAlarmsForDate(date: LocalDate) {
         viewModelScope.launch {
-            // 선택된 날짜에 해당하는 알람만 가져오기
-            getAlarmsByDateUseCase.invoke(date).collect { alarmList ->
-                _selectedDateAlarms.value = alarmList
+            // 선택된 날짜에 해당하는 알람과 상태 정보를 함께 가져오기
+            getAlarmsByDateUseCase.invoke(date).collect { alarmWithStatusList ->
+                _selectedDateAlarms.value = alarmWithStatusList
             }
         }
     }
@@ -51,7 +53,7 @@ class ScheduleViewModel @Inject constructor(
                 endDate = null, // 무기한
                 isActive = true
             )
-            
+
             if (result == -1L) {
                 _message.value = "동일한 알람이 이미 존재합니다."
             } else {
@@ -59,7 +61,7 @@ class ScheduleViewModel @Inject constructor(
             }
         }
     }
-    
+
     /**
      * 메시지 확인 후 제거
      */

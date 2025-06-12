@@ -3,6 +3,7 @@ package com.sb.alarm.data.datasource.database.mapper
 import com.sb.alarm.data.datasource.database.entity.AlarmEntity
 import com.sb.alarm.data.datasource.database.entity.AlarmHistoryEntity
 import com.sb.alarm.domain.model.Alarm
+import com.sb.alarm.domain.model.AlarmHistory
 import com.sb.alarm.shared.TakeStatus
 
 fun AlarmEntity.toDomainModel(): Alarm {
@@ -32,5 +33,23 @@ fun Alarm.toEntity(): AlarmEntity {
         startDate = startDate,
         endDate = endDate,
         isActive = isActive
+    )
+}
+
+fun AlarmHistoryEntity.toDomainModel(): AlarmHistory {
+    return AlarmHistory(
+        alarmId = alarmId,
+        logDate = logDate,
+        status = status,
+        actionTimestamp = actionTimestamp
+    )
+}
+
+fun AlarmHistory.toEntity(): AlarmHistoryEntity {
+    return AlarmHistoryEntity(
+        alarmId = alarmId,
+        logDate = logDate,
+        status = status,
+        actionTimestamp = actionTimestamp
     )
 } 

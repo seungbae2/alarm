@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -48,8 +50,9 @@ import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
 import com.kizitonwose.calendar.core.WeekDay
 import com.kizitonwose.calendar.core.daysOfWeek
 import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
-import com.sb.alarm.domain.model.Alarm
+import com.sb.alarm.domain.model.AlarmWithStatus
 import com.sb.alarm.shared.RepeatType
+import com.sb.alarm.shared.TakeStatus
 import com.sb.alarm.util.toKoreanDateString
 import com.sb.alarm.util.toKoreanMonth
 import com.sb.alarm.util.toKoreanString
@@ -64,6 +67,9 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
 import kotlinx.datetime.todayIn
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,7 +86,7 @@ fun ScheduleScreen(
     LaunchedEffect(selectedDate) {
         viewModel.loadAlarmsForDate(selectedDate)
     }
-    
+
     // 메시지 스낵바 표시
     LaunchedEffect(message) {
         message?.let {
@@ -133,7 +139,7 @@ fun ScheduleScreen(
 private fun ScheduleContent(
     modifier: Modifier = Modifier,
     selectedDate: LocalDate,
-    selectedDateAlarms: List<Alarm>,
+    selectedDateAlarms: List<AlarmWithStatus>,
     calendarState: WeekCalendarState,
     onDateSelected: (LocalDate) -> Unit,
 ) {
@@ -153,7 +159,7 @@ private fun ScheduleContent(
                 .fillMaxWidth()
                 .weight(1f),
             selectedDate = selectedDate,
-            selectedDateAlarms = selectedDateAlarms
+            selectedDateAlarms = selectedDateAlarms,
         )
     }
 }
@@ -162,7 +168,7 @@ private fun ScheduleContent(
 private fun CalendarSection(
     modifier: Modifier = Modifier,
     selectedDate: LocalDate,
-    selectedDateAlarms: List<Alarm>,
+    selectedDateAlarms: List<AlarmWithStatus>,
     calendarState: WeekCalendarState,
     onDateSelected: (LocalDate) -> Unit,
 ) {
@@ -219,7 +225,7 @@ private fun CalendarHeader(
 private fun AlarmListSection(
     modifier: Modifier = Modifier,
     selectedDate: LocalDate,
-    selectedDateAlarms: List<Alarm>,
+    selectedDateAlarms: List<AlarmWithStatus>,
 ) {
     Column(modifier = modifier) {
         AlarmListHeader(
@@ -231,7 +237,7 @@ private fun AlarmListSection(
             alarms = selectedDateAlarms,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp),
         )
     }
 }
@@ -251,15 +257,16 @@ private fun AlarmListHeader(
 
 @Composable
 private fun AlarmList(
-    alarms: List<Alarm>,
+    alarms: List<AlarmWithStatus>,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(alarms) { alarm ->
-            AlarmItem(alarm = alarm)
+        items(alarms) { alarmWithStatus ->
+            AlarmItem(alarmWithStatus = alarmWithStatus)
+            Spacer(modifier = Modifier.height(height = 2.dp))
         }
 
         if (alarms.isEmpty()) {
@@ -374,7 +381,12 @@ private fun AlarmIndicator(isSelected: Boolean) {
 }
 
 @Composable
-private fun AlarmItem(alarm: Alarm) {
+private fun AlarmItem(
+    alarmWithStatus: AlarmWithStatus,
+) {
+    val alarm = alarmWithStatus.alarm
+    val takeStatus = alarmWithStatus.takeStatus
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -385,27 +397,38 @@ private fun AlarmItem(alarm: Alarm) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            AlarmTime(
-                hour = alarm.hour,
-                minute = alarm.minute
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    AlarmTime(
+                        hour = alarm.hour,
+                        minute = alarm.minute
+                    )
 
-            AlarmMedicationName(
-                medicationName = alarm.medicationName,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+                    AlarmMedicationName(
+                        medicationName = alarm.medicationName,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
 
-            AlarmRepeatInfo(
-                repeatType = alarm.repeatType,
-                repeatInterval = alarm.repeatInterval,
-                repeatDaysOfWeek = alarm.repeatDaysOfWeek,
-                modifier = Modifier.padding(top = 2.dp)
-            )
+                    AlarmRepeatInfo(
+                        repeatType = alarm.repeatType,
+                        repeatInterval = alarm.repeatInterval,
+                        repeatDaysOfWeek = alarm.repeatDaysOfWeek,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
 
-            AlarmStatus(
-                isActive = alarm.isActive,
-                modifier = Modifier.padding(top = 2.dp)
-            )
+                    AlarmTakeStatus(
+                        takeStatus = takeStatus,
+                        actionTimestamp = alarmWithStatus.actionTimestamp,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -473,16 +496,37 @@ private fun AlarmRepeatInfo(
 }
 
 @Composable
-private fun AlarmStatus(
-    isActive: Boolean,
+private fun AlarmTakeStatus(
+    takeStatus: TakeStatus?,
+    actionTimestamp: Long?,
     modifier: Modifier = Modifier,
 ) {
-    Text(
-        text = if (isActive) "활성" else "비활성",
-        style = MaterialTheme.typography.bodySmall,
-        color = if (isActive)
-            MaterialTheme.colorScheme.primary
-        else MaterialTheme.colorScheme.error,
-        modifier = modifier
-    )
+    val (statusText, statusColor) = when (takeStatus) {
+        TakeStatus.TAKEN -> "💊 복용 완료" to MaterialTheme.colorScheme.primary
+        TakeStatus.SKIPPED -> "⏭️ 복용 스킵" to MaterialTheme.colorScheme.error
+        null -> "⏰ 대기 중" to MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Column(modifier = modifier) {
+        Text(
+            text = statusText,
+            style = MaterialTheme.typography.bodySmall,
+            color = statusColor,
+            fontWeight = if (takeStatus != null) FontWeight.Medium else FontWeight.Normal
+        )
+
+        // 처리 시간 표시 (처리된 경우만)
+        if (takeStatus != null && actionTimestamp != null) {
+            val timeString = remember(actionTimestamp) {
+                SimpleDateFormat("HH:mm", Locale.getDefault())
+                    .format(Date(actionTimestamp))
+            }
+            Text(
+                text = "처리 시간: $timeString",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+    }
 } 
