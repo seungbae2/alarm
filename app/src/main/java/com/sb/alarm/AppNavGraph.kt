@@ -1,4 +1,4 @@
-package com.sb.alarm.navigation
+package com.sb.alarm
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController

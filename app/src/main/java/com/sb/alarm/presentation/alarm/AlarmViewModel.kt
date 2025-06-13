@@ -10,8 +10,8 @@ import com.sb.alarm.domain.model.AlarmHistory
 import com.sb.alarm.domain.repository.AlarmRepository
 import com.sb.alarm.domain.repository.AlarmSchedulerRepository
 import com.sb.alarm.presentation.service.AlarmService
-import com.sb.alarm.shared.RepeatType
-import com.sb.alarm.shared.TakeStatus
+import com.sb.alarm.shared.constants.RepeatType
+import com.sb.alarm.shared.constants.TakeStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow

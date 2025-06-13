@@ -1,4 +1,4 @@
-package com.sb.alarm.shared
+package com.sb.alarm.shared.constants
 
 /**
  * 반복 타입을 정의하는 Enum 클래스

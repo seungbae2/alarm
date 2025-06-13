@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sb.alarm.domain.usecase.AddAlarmUseCase
 import com.sb.alarm.domain.usecase.GetAlarmsByDateUseCase
-import com.sb.alarm.shared.RepeatType
+import com.sb.alarm.shared.constants.RepeatType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow

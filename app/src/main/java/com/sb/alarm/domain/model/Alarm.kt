@@ -1,6 +1,7 @@
 package com.sb.alarm.domain.model
 
-import com.sb.alarm.shared.RepeatType
+import com.sb.alarm.shared.constants.RepeatType
+
 
 data class Alarm(
     val id: Int = 0,
@@ -12,5 +13,5 @@ data class Alarm(
     val repeatDaysOfWeek: List<Int>? = null,
     val startDate: Long,
     val endDate: Long? = null,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
 ) 

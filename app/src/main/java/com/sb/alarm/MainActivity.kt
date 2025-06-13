@@ -9,8 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.sb.alarm.navigation.AppNavGraph
-import com.sb.alarm.ui.theme.AlarmTheme
+import com.sb.alarm.shared.theme.AlarmTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

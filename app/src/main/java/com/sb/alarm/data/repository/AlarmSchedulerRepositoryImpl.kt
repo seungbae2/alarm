@@ -9,7 +9,7 @@ import android.util.Log
 import com.sb.alarm.domain.model.Alarm
 import com.sb.alarm.domain.repository.AlarmSchedulerRepository
 import com.sb.alarm.presentation.receiver.AlarmReceiver
-import com.sb.alarm.shared.RepeatType
+import com.sb.alarm.shared.constants.RepeatType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit

@@ -2,7 +2,7 @@ package com.sb.alarm.data.datasource.database.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
-import com.sb.alarm.shared.TakeStatus
+import com.sb.alarm.shared.constants.TakeStatus
 
 @Entity(
     tableName = "alarm_history",
@@ -20,10 +20,10 @@ import com.sb.alarm.shared.TakeStatus
 )
 data class AlarmHistoryEntity(
     val alarmId: Int, // 어떤 알람에 대한 기록인지 (Alarm의 id와 연결)
-    
+
     val logDate: String, // 기록 날짜 (예: "2025-06-10")
 
     val status: TakeStatus, // 복용 상태 ('약 먹음', '약 스킵')
-    
-    val actionTimestamp: Long // 사용자가 선택한 시간 (Timestamp)
+
+    val actionTimestamp: Long, // 사용자가 선택한 시간 (Timestamp)
 ) 

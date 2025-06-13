@@ -1,7 +1,7 @@
 package com.sb.alarm.domain.usecase
 
 import com.sb.alarm.domain.repository.AlarmRepository
-import com.sb.alarm.shared.TakeStatus
+import com.sb.alarm.shared.constants.TakeStatus
 import kotlinx.datetime.LocalDate
 import javax.inject.Inject
 

@@ -4,7 +4,6 @@ import com.sb.alarm.data.datasource.database.entity.AlarmEntity
 import com.sb.alarm.data.datasource.database.entity.AlarmHistoryEntity
 import com.sb.alarm.domain.model.Alarm
 import com.sb.alarm.domain.model.AlarmHistory
-import com.sb.alarm.shared.TakeStatus
 
 fun AlarmEntity.toDomainModel(): Alarm {
     return Alarm(

@@ -2,8 +2,8 @@ package com.sb.alarm.domain.repository
 
 import com.sb.alarm.domain.model.Alarm
 import com.sb.alarm.domain.model.AlarmHistory
-import com.sb.alarm.shared.RepeatType
-import com.sb.alarm.shared.TakeStatus
+import com.sb.alarm.shared.constants.RepeatType
+import com.sb.alarm.shared.constants.TakeStatus
 import kotlinx.coroutines.flow.Flow
 
 interface AlarmRepository {

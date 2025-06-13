@@ -1,4 +1,4 @@
-package com.sb.alarm.util
+package com.sb.alarm.shared.util
 
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate

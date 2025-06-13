@@ -7,8 +7,8 @@ import com.sb.alarm.data.datasource.database.mapper.toEntity
 import com.sb.alarm.domain.model.Alarm
 import com.sb.alarm.domain.model.AlarmHistory
 import com.sb.alarm.domain.repository.AlarmRepository
-import com.sb.alarm.shared.RepeatType
-import com.sb.alarm.shared.TakeStatus
+import com.sb.alarm.shared.constants.RepeatType
+import com.sb.alarm.shared.constants.TakeStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString

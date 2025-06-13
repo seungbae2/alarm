@@ -1,14 +1,13 @@
 package com.sb.alarm.data.datasource.database.converter
 
 import androidx.room.TypeConverter
-import com.sb.alarm.shared.RepeatType
-import com.sb.alarm.shared.TakeStatus
+import com.sb.alarm.shared.constants.RepeatType
+import com.sb.alarm.shared.constants.TakeStatus
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.decodeFromString
 
 class DatabaseConverters {
-    
+
     @TypeConverter
     fun fromRepeatType(type: RepeatType): String = type.name
 
@@ -20,7 +19,7 @@ class DatabaseConverters {
 
     @TypeConverter
     fun toTakeStatus(value: String): TakeStatus = TakeStatus.valueOf(value)
-    
+
     @TypeConverter
     fun fromIntList(value: List<Int>?): String? {
         return value?.let { Json.encodeToString(it) }

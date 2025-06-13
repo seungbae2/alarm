@@ -1,4 +1,4 @@
-package com.sb.alarm.ui.theme
+package com.sb.alarm.shared.theme
 
 import androidx.compose.ui.graphics.Color
 

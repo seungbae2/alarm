@@ -3,7 +3,7 @@ package com.sb.alarm.domain.usecase
 import com.sb.alarm.domain.model.Alarm
 import com.sb.alarm.domain.model.AlarmWithStatus
 import com.sb.alarm.domain.repository.AlarmRepository
-import com.sb.alarm.shared.RepeatType
+import com.sb.alarm.shared.constants.RepeatType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.datetime.DayOfWeek

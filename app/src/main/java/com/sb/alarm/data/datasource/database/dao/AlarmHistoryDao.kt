@@ -6,30 +6,35 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.sb.alarm.data.datasource.database.entity.AlarmHistoryEntity
-import com.sb.alarm.shared.TakeStatus
+import com.sb.alarm.shared.constants.TakeStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AlarmHistoryDao {
-    
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(history: AlarmHistoryEntity)
-    
+
     @Update
     suspend fun update(history: AlarmHistoryEntity)
-    
+
     @Query("SELECT * FROM alarm_history WHERE alarmId = :alarmId AND logDate = :logDate")
     suspend fun getHistory(alarmId: Int, logDate: String): AlarmHistoryEntity?
-    
+
     @Query("SELECT * FROM alarm_history WHERE alarmId = :alarmId")
     fun getHistoryByAlarmId(alarmId: Int): Flow<List<AlarmHistoryEntity>>
-    
+
     @Query("SELECT * FROM alarm_history WHERE logDate = :logDate")
     fun getHistoryByDate(logDate: String): Flow<List<AlarmHistoryEntity>>
-    
+
     @Query("UPDATE alarm_history SET status = :status, actionTimestamp = :actionTimestamp WHERE alarmId = :alarmId AND logDate = :logDate")
-    suspend fun updateStatus(alarmId: Int, logDate: String, status: TakeStatus, actionTimestamp: Long)
-    
+    suspend fun updateStatus(
+        alarmId: Int,
+        logDate: String,
+        status: TakeStatus,
+        actionTimestamp: Long,
+    )
+
     @Query("DELETE FROM alarm_history WHERE alarmId = :alarmId")
     suspend fun deleteHistoryByAlarmId(alarmId: Int)
 } 

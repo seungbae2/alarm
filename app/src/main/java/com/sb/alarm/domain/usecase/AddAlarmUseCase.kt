@@ -3,7 +3,7 @@ package com.sb.alarm.domain.usecase
 import com.sb.alarm.domain.model.Alarm
 import com.sb.alarm.domain.repository.AlarmRepository
 import com.sb.alarm.domain.repository.AlarmSchedulerRepository
-import com.sb.alarm.shared.RepeatType
+import com.sb.alarm.shared.constants.RepeatType
 import javax.inject.Inject
 
 class AddAlarmUseCase @Inject constructor(
@@ -32,7 +32,7 @@ class AddAlarmUseCase @Inject constructor(
         repeatDaysOfWeek: List<Int>? = null,
         startDate: Long? = null,
         endDate: Long? = null,
-        isActive: Boolean = true
+        isActive: Boolean = true,
     ): Long {
         // 중복 알람 검사
         val hasDuplicate = alarmRepository.hasDuplicateAlarm(
@@ -42,11 +42,11 @@ class AddAlarmUseCase @Inject constructor(
             repeatInterval = repeatInterval,
             repeatDaysOfWeek = repeatDaysOfWeek
         )
-        
+
         if (hasDuplicate) {
             return -1L // 중복 알람이 있음을 나타내는 값
         }
-        
+
         val alarm = Alarm(
             medicationName = medicationName,
             hour = hour,
@@ -58,16 +58,16 @@ class AddAlarmUseCase @Inject constructor(
             endDate = endDate,
             isActive = isActive
         )
-        
+
         // 1. 데이터베이스에 알람 저장
         val alarmId = alarmRepository.addAlarm(alarm)
-        
+
         // 2. 성공적으로 저장되고 활성화된 알람인 경우 AlarmManager에도 등록
         if (alarmId > 0 && isActive) {
             val savedAlarm = alarm.copy(id = alarmId.toInt())
             alarmSchedulerRepository.schedule(savedAlarm)
         }
-        
+
         return alarmId
     }
 } 
