@@ -16,21 +16,11 @@ interface AlarmDao {
     @Update
     suspend fun update(alarm: AlarmEntity)
 
-    @Query("SELECT * FROM alarms WHERE isActive = 1")
-    fun getAllActiveAlarms(): Flow<List<AlarmEntity>>
-
     @Query("SELECT * FROM alarms")
     fun getAllAlarms(): Flow<List<AlarmEntity>>
 
-    @Query(
-        """
-        SELECT * FROM alarms 
-        WHERE isActive = 1 
-        AND (endDate IS NULL OR endDate >= :targetDateTimestamp)
-        AND startDate <= :targetDateTimestamp
-    """
-    )
-    fun getActiveAlarmsForDateRange(targetDateTimestamp: Long): Flow<List<AlarmEntity>>
+    @Query("SELECT * FROM alarms WHERE isActive = 1")
+    fun getActiveAlarms(): Flow<List<AlarmEntity>>
 
     @Query("SELECT * FROM alarms WHERE id = :id")
     suspend fun getAlarmById(id: Int): AlarmEntity?

@@ -31,7 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kizitonwose.calendar.compose.WeekCalendar
 import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
@@ -76,26 +76,23 @@ import java.util.Locale
 fun ScheduleScreen(
     viewModel: ScheduleViewModel = hiltViewModel(),
 ) {
-    val selectedDateAlarms by viewModel.selectedDateAlarms.collectAsState()
-    val message by viewModel.message.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
+    var selectedDate by remember { mutableStateOf(today) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var selectedDate by remember { mutableStateOf(today) }
-
     LaunchedEffect(selectedDate) {
-        viewModel.loadAlarmsForDate(selectedDate)
+        viewModel.onEvent(ScheduleEvent.LoadAlarms(selectedDate))
     }
 
-    // 메시지 스낵바 표시
-    LaunchedEffect(message) {
-        message?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.clearMessage()
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect {
+            when (it) {
+                is ScheduleEffect.ShowToast -> snackbarHostState.showSnackbar(it.message)
+            }
         }
     }
 
-    // kotlinx.datetime으로 날짜 계산 후 java.time으로 변환
     val startDate = remember { today.minus(DatePeriod(months = 6)).toJavaLocalDate() }
     val endDate = remember { today.plus(DatePeriod(months = 6)).toJavaLocalDate() }
 
@@ -117,50 +114,41 @@ fun ScheduleScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = viewModel::addDailyNoonAlarm
+                onClick = { viewModel.onEvent(ScheduleEvent.AddAlarm) }
             ) {
                 Icon(Icons.Default.Add, contentDescription = "매일 12시 알람 추가")
             }
         }
     ) { paddingValues ->
-        ScheduleContent(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            selectedDate = selectedDate,
-            selectedDateAlarms = selectedDateAlarms,
-            calendarState = calendarState,
-            onDateSelected = { date -> selectedDate = date }
-        )
-    }
-}
+        ) {
+            CalendarSection(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                selectedDate = selectedDate,
+                calendarState = calendarState,
+                onDateSelected = { date -> selectedDate = date }
+            )
 
-@Composable
-private fun ScheduleContent(
-    modifier: Modifier = Modifier,
-    selectedDate: LocalDate,
-    selectedDateAlarms: List<AlarmWithStatus>,
-    calendarState: WeekCalendarState,
-    onDateSelected: (LocalDate) -> Unit,
-) {
-    Column(modifier = modifier) {
-        CalendarSection(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            selectedDate = selectedDate,
-            selectedDateAlarms = selectedDateAlarms,
-            calendarState = calendarState,
-            onDateSelected = onDateSelected
-        )
+            when (uiState) {
+                is ScheduleUiState.Loading -> {}
+                is ScheduleUiState.Success -> {
+                    AlarmListSection(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        selectedDate = selectedDate,
+                        selectedDateAlarms = (uiState as ScheduleUiState.Success).alarms,
+                    )
+                }
 
-        AlarmListSection(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            selectedDate = selectedDate,
-            selectedDateAlarms = selectedDateAlarms,
-        )
+                is ScheduleUiState.Error -> {}
+            }
+        }
     }
 }
 
@@ -168,7 +156,6 @@ private fun ScheduleContent(
 private fun CalendarSection(
     modifier: Modifier = Modifier,
     selectedDate: LocalDate,
-    selectedDateAlarms: List<AlarmWithStatus>,
     calendarState: WeekCalendarState,
     onDateSelected: (LocalDate) -> Unit,
 ) {
@@ -194,7 +181,6 @@ private fun CalendarSection(
                     DayContent(
                         day = day,
                         isSelected = day.date.toKotlinLocalDate() == selectedDate,
-                        hasAlarm = selectedDateAlarms.isNotEmpty() && day.date.toKotlinLocalDate() == selectedDate,
                         onClick = { onDateSelected(day.date.toKotlinLocalDate()) }
                     )
                 }
@@ -325,7 +311,6 @@ private fun WeekHeader(daysOfWeek: List<DayOfWeek>) {
 private fun DayContent(
     day: WeekDay,
     isSelected: Boolean,
-    hasAlarm: Boolean,
     onClick: () -> Unit,
 ) {
     val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
@@ -360,24 +345,8 @@ private fun DayContent(
                 fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal
             )
 
-            if (hasAlarm) {
-                AlarmIndicator(isSelected = isSelected)
-            }
         }
     }
-}
-
-@Composable
-private fun AlarmIndicator(isSelected: Boolean) {
-    Box(
-        modifier = Modifier
-            .size(4.dp)
-            .background(
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                else MaterialTheme.colorScheme.primary,
-                shape = CircleShape
-            )
-    )
 }
 
 @Composable

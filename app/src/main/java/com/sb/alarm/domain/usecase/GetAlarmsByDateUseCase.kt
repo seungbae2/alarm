@@ -6,7 +6,6 @@ import com.sb.alarm.domain.repository.AlarmRepository
 import com.sb.alarm.shared.RepeatType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -19,9 +18,9 @@ class GetAlarmsByDateUseCase @Inject constructor(
 ) {
     operator fun invoke(date: LocalDate): Flow<List<AlarmWithStatus>> {
         val dateString = date.toString() // "2024-01-15" 형식
-        
+
         return combine(
-            alarmRepository.getActiveAlarmsForDateRange(date),
+            alarmRepository.getActiveAlarms(),
             alarmRepository.getHistoryByDate(dateString)
         ) { alarms, histories ->
             alarms.filter { alarm ->
@@ -33,7 +32,7 @@ class GetAlarmsByDateUseCase @Inject constructor(
                     takeStatus = history?.status,
                     actionTimestamp = history?.actionTimestamp
                 )
-            }
+            }.sortedBy { it.alarm.hour * 60 + it.alarm.minute } // 시간순 오름차순 정렬
         }
     }
 

@@ -11,9 +11,6 @@ import com.sb.alarm.shared.RepeatType
 import com.sb.alarm.shared.TakeStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -23,10 +20,8 @@ class AlarmRepositoryImpl @Inject constructor(
     private val alarmHistoryDao: AlarmHistoryDao,
 ) : AlarmRepository {
 
-    override fun getActiveAlarmsForDateRange(targetDate: LocalDate): Flow<List<Alarm>> {
-        val targetDateTimestamp =
-            targetDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-        return alarmDao.getActiveAlarmsForDateRange(targetDateTimestamp).map { entities ->
+    override fun getActiveAlarms(): Flow<List<Alarm>> {
+        return alarmDao.getActiveAlarms().map { entities ->
             entities.map { it.toDomainModel() }
         }
     }
@@ -38,17 +33,17 @@ class AlarmRepositoryImpl @Inject constructor(
     override suspend fun addAlarm(alarm: Alarm): Long {
         return alarmDao.insert(alarm.toEntity())
     }
-    
+
     override suspend fun updateAlarmActiveStatus(id: Int, isActive: Boolean) {
         alarmDao.updateAlarmActiveStatus(id, isActive)
     }
-    
+
     override suspend fun hasDuplicateAlarm(
         hour: Int,
         minute: Int,
         repeatType: RepeatType,
         repeatInterval: Int,
-        repeatDaysOfWeek: List<Int>?
+        repeatDaysOfWeek: List<Int>?,
     ): Boolean {
         val repeatDaysOfWeekJson = repeatDaysOfWeek?.let { Json.encodeToString(it) }
         val duplicateCount = alarmDao.countDuplicateAlarms(

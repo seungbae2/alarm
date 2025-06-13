@@ -2,6 +2,32 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- 다른 앱 위에 표시하는 권한 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- 화면이 꺼진 상태에서도 알람이 동작하도록 -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- 재부팅 후 알람 재등록을 위한 권한 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- 진동 권한 -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- 잠금화면 위에 표시하기 위한 권한 -->
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
+    <!-- 정확한 알람 스케줄링 권한 (Android 12+) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+    <!-- 정확한 알람 사용 권한 (Android 13+) -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!-- 포그라운드 서비스 권한 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
     <application
         android:name=".AlarmApplication"
         android:allowBackup="true"
@@ -13,6 +39,39 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Alarm"
         tools:targetApi="31">
+
+        <!-- 알람 서비스 -->
+        <service
+            android:name=".presentation.service.AlarmService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <!-- 알람 브로드캐스트 리시버 -->
+        <receiver
+            android:name=".presentation.receiver.AlarmReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- 재부팅 및 시스템 변경 감지 리시버 -->
+        <receiver
+            android:name=".presentation.receiver.BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter android:priority="1000">
+                <!-- 재부팅 완료 -->
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <!-- 앱 업데이트 -->
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <!-- 시간/시간대 변경 -->
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+
+                <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -23,6 +82,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 알람 전용 Activity 추가 -->
+        <activity
+            android:name=".presentation.alarm.AlarmActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:showOnLockScreen="true"
+            android:theme="@style/Theme.Alarm"
+            android:turnScreenOn="true" />
     </application>
 
 </manifest>
