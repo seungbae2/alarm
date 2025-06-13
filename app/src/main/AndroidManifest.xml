@@ -28,6 +28,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
+    <!-- 배터리 최적화 무시 권한 -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- 알림 권한 (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".AlarmApplication"
         android:allowBackup="true"
@@ -43,6 +49,13 @@
         <!-- 알람 서비스 -->
         <service
             android:name=".presentation.service.AlarmService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <!-- 지속성 알람 모니터링 서비스 -->
+        <service
+            android:name=".presentation.service.PersistentAlarmService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
@@ -83,12 +96,15 @@
             </intent-filter>
         </activity>
 
-        <!-- 알람 전용 Activity 추가 -->
+        <!-- 알람 전용 Activity - 잠금 화면 대응 강화 -->
         <activity
             android:name=".presentation.alarm.AlarmActivity"
+            android:excludeFromRecents="true"
             android:exported="false"
             android:launchMode="singleTop"
+            android:noHistory="true"
             android:showOnLockScreen="true"
+            android:showWhenLocked="true"
             android:theme="@style/Theme.Alarm"
             android:turnScreenOn="true" />
     </application>

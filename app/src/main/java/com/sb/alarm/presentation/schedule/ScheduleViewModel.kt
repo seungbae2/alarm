@@ -29,7 +29,7 @@ class ScheduleViewModel @Inject constructor(
 
     fun onEvent(event: ScheduleEvent) {
         when (event) {
-            is ScheduleEvent.AddAlarm -> addDailyNoonAlarm()
+            is ScheduleEvent.AddAlarm -> addAlarm()
             is ScheduleEvent.LoadAlarms -> loadAlarmsForDate(date = event.date)
         }
     }
@@ -69,8 +69,8 @@ class ScheduleViewModel @Inject constructor(
         viewModelScope.launch {
             val result = addAlarmUseCase.invoke(
                 medicationName = "테스트 알람",
-                hour = 18,
-                minute = 48,
+                hour = 20,
+                minute = 7,
                 repeatType = RepeatType.DAILY,
                 repeatInterval = 1,
                 repeatDaysOfWeek = null, // 매일이므로 요일 지정 불필요

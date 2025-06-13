@@ -3,6 +3,9 @@ package com.sb.alarm.presentation.alarm
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.PowerManager
 import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -25,8 +28,15 @@ class AlarmActivity : ComponentActivity() {
     // Hilt를 통한 ViewModel 의존성 주입
     private val viewModel: AlarmViewModel by viewModels()
 
+    // 화면 모니터링을 위한 변수들
+    private var isAlarmActive = true
+    private var screenMonitoringHandler: Handler? = null
+    private var currentAlarmId: Int = -1
+    private var isUserActionCompleted = false // 사용자가 명시적으로 알람을 처리했는지 추적
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("AlarmActivity", "onCreate() called")
 
         // 잠금화면 위에 표시하고 화면 켜기
         setupWindowFlags()
@@ -38,7 +48,11 @@ class AlarmActivity : ComponentActivity() {
             return
         }
 
+        currentAlarmId = alarmId
         Log.d("AlarmActivity", "AlarmActivity started for alarm ID: $alarmId")
+
+        // 화면 모니터링 시작
+        startScreenMonitoring()
 
         setContent {
             AlarmTheme {
@@ -60,18 +74,24 @@ class AlarmActivity : ComponentActivity() {
                                 AlarmEffect.NavigateToSchedule -> {
                                     Log.d(
                                         "AlarmActivity",
-                                        "Alarm completed, stopping alarm and navigating to schedule"
+                                        "AlarmEffect.NavigateToSchedule received - USER ACTION: stopping alarm and navigating to schedule"
                                     )
-                                    stopAlarmSound()
+                                    isUserActionCompleted = true // 사용자 액션 완료 표시
+                                    isAlarmActive = false // 알람 비활성화
+                                    stopScreenMonitoring("AlarmEffect.NavigateToSchedule") // 화면 모니터링 중지
+                                    stopAlarmSound() // 사용자 액션이므로 알람 중지
                                     navigateToScheduleScreen()
                                 }
 
                                 AlarmEffect.NavigateToScheduleAfterDismiss -> {
                                     Log.d(
                                         "AlarmActivity",
-                                        "Alarm dismissed, stopping alarm and navigating to schedule"
+                                        "AlarmEffect.NavigateToScheduleAfterDismiss received - USER ACTION: stopping alarm and navigating to schedule"
                                     )
-                                    stopAlarmSound()
+                                    isUserActionCompleted = true // 사용자 액션 완료 표시
+                                    isAlarmActive = false // 알람 비활성화
+                                    stopScreenMonitoring("AlarmEffect.NavigateToScheduleAfterDismiss") // 화면 모니터링 중지
+                                    stopAlarmSound() // 사용자 액션이므로 알람 중지
                                     navigateToScheduleScreen()
                                 }
                             }
@@ -87,6 +107,37 @@ class AlarmActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Log.d("AlarmActivity", "onStart() called")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d("AlarmActivity", "onResume() called")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Log.d("AlarmActivity", "onPause() called - Activity going to background")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.d("AlarmActivity", "onStop() called - Activity no longer visible")
+
+        // 사용자가 명시적으로 알람을 처리하지 않았다면 새로운 Activity 실행
+        if (!isUserActionCompleted && isAlarmActive) {
+            Log.d("AlarmActivity", "Activity stopped but alarm still active - restarting activity")
+            restartAlarmActivityDelayed()
+        }
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        Log.d("AlarmActivity", "onRestart() called")
     }
 
     private fun stopAlarmSound() {
@@ -133,24 +184,111 @@ class AlarmActivity : ComponentActivity() {
             Log.d("AlarmActivity", "Set window flags for older Android versions")
         }
 
-        // 추가 플래그들
+        // 추가 플래그들 - 강제성을 위한 강화된 플래그들
         window.addFlags(
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
-                    WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
+                    WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
         )
+    }
+
+    private fun startScreenMonitoring() {
+        screenMonitoringHandler = Handler(Looper.getMainLooper())
+        val screenCheckRunnable = object : Runnable {
+            override fun run() {
+                if (isAlarmActive && !isUserActionCompleted) {
+                    // 화면이 꺼져있으면 다시 켜기
+                    if (!isScreenOn()) {
+                        Log.d("AlarmActivity", "Screen is off, restarting alarm activity")
+                        restartAlarmActivity()
+                    }
+                    screenMonitoringHandler?.postDelayed(this, 2000) // 2초마다 체크
+                }
+            }
+        }
+        screenMonitoringHandler?.post(screenCheckRunnable)
+        Log.d("AlarmActivity", "Started screen monitoring")
+    }
+
+    private fun stopScreenMonitoring(reason: String = "Unknown") {
+        Log.d("AlarmActivity", "stopScreenMonitoring() called - Reason: $reason")
+
+        screenMonitoringHandler?.removeCallbacksAndMessages(null)
+        screenMonitoringHandler = null
+        Log.d("AlarmActivity", "Stopped screen monitoring")
+    }
+
+    private fun isScreenOn(): Boolean {
+        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
+        return powerManager.isInteractive
+    }
+
+    private fun restartAlarmActivity() {
+        try {
+            val intent = Intent(this, AlarmActivity::class.java).apply {
+                putExtra("ALARM_ID", currentAlarmId)
+                putExtra("MEDICATION_NAME", intent.getStringExtra("MEDICATION_NAME"))
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_NO_USER_ACTION
+            }
+            startActivity(intent)
+            Log.d("AlarmActivity", "Restarted alarm activity due to screen off")
+        } catch (e: Exception) {
+            Log.e("AlarmActivity", "Failed to restart alarm activity", e)
+        }
+    }
+
+    private fun restartAlarmActivityDelayed() {
+        // 약간의 지연 후 새로운 Activity 실행 (시스템이 안정화될 시간 제공)
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!isUserActionCompleted && isAlarmActive) {
+                try {
+                    val intent = Intent(this, AlarmActivity::class.java).apply {
+                        putExtra("ALARM_ID", currentAlarmId)
+                        putExtra("MEDICATION_NAME", intent.getStringExtra("MEDICATION_NAME"))
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                                Intent.FLAG_ACTIVITY_NO_USER_ACTION
+                    }
+                    startActivity(intent)
+                    Log.d("AlarmActivity", "Delayed restart of alarm activity executed")
+                } catch (e: Exception) {
+                    Log.e("AlarmActivity", "Failed to restart alarm activity with delay", e)
+                }
+            }
+        }, 1000) // 1초 후 실행
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // Activity가 종료될 때 알람 소리도 함께 종료
-        stopAlarmSound()
-        Log.d("AlarmActivity", "AlarmActivity destroyed, alarm sound stopped")
+        Log.d("AlarmActivity", "onDestroy() called")
+
+        // 화면 모니터링만 중지 (알람 서비스는 사용자 액션이 있을 때만 중지)
+        stopScreenMonitoring("onDestroy")
+
+        // 사용자 액션이 완료된 경우에만 알람 중지
+        if (isUserActionCompleted) {
+            stopAlarmSound()
+            Log.d("AlarmActivity", "User action completed - alarm sound stopped")
+        } else {
+            Log.d("AlarmActivity", "Activity destroyed but no user action - alarm continues")
+        }
+
+        Log.d("AlarmActivity", "AlarmActivity destroyed")
     }
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         // 뒤로가기 버튼 무시 (알람은 반드시 처리되어야 함)
-        Log.d("AlarmActivity", "Back button pressed - ignored for alarm handling")
-        // super.onBackPressed() 호출하지 않음으로써 뒤로가기 방지
+        if (isAlarmActive && !isUserActionCompleted) {
+            Log.d("AlarmActivity", "Back button pressed - ignored for alarm handling")
+            // super.onBackPressed() 호출하지 않음으로써 뒤로가기 방지
+        } else {
+            super.onBackPressed()
+        }
     }
 } 
