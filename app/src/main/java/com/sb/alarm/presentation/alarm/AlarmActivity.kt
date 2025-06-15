@@ -25,14 +25,13 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class AlarmActivity : ComponentActivity() {
 
-    // Hilt를 통한 ViewModel 의존성 주입
     private val viewModel: AlarmViewModel by viewModels()
 
     // 화면 모니터링을 위한 변수들
     private var isAlarmActive = true
     private var screenMonitoringHandler: Handler? = null
     private var currentAlarmId: Int = -1
-    private var isUserActionCompleted = false // 사용자가 명시적으로 알람을 처리했는지 추적
+    private var isUserActionCompleted = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

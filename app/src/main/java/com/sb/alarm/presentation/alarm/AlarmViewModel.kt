@@ -132,10 +132,21 @@ class AlarmViewModel @Inject constructor(
     }
 
     private suspend fun scheduleNextAlarmIfRepeating(alarm: Alarm, alarmId: Int) {
-        if (alarm.repeatType != RepeatType.NONE) {
-            alarmSchedulerRepository.schedule(alarm)
-        } else {
-            alarmRepository.updateAlarmActiveStatus(alarmId, false)
+        when (alarm.repeatType) {
+            RepeatType.NONE -> {
+                Log.d("AlarmViewModel", "One-time alarm - deactivating")
+                alarmRepository.updateAlarmActiveStatus(alarmId, false)
+            }
+
+            RepeatType.DAILY -> {
+                Log.d("AlarmViewModel", "Daily alarm - rescheduling for next day")
+                alarmSchedulerRepository.schedule(alarm)
+            }
+
+            else -> {
+                Log.d("AlarmViewModel", "Repeating alarm - rescheduling")
+                alarmSchedulerRepository.schedule(alarm)
+            }
         }
     }
 
