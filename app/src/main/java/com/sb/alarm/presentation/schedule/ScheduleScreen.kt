@@ -18,22 +18,26 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,6 +61,7 @@ import com.sb.alarm.shared.util.toKoreanDateString
 import com.sb.alarm.shared.util.toKoreanMonth
 import com.sb.alarm.shared.util.toKoreanString
 import com.sb.alarm.shared.util.toKotlinDayOfWeek
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
@@ -80,6 +85,12 @@ fun ScheduleScreen(
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
     var selectedDate by remember { mutableStateOf(today) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    var selectedAlarm by remember { mutableStateOf<AlarmWithStatus?>(null) }
+    var showBottomSheet by remember { mutableStateOf(false) }
+
+    val bottomSheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(selectedDate) {
         viewModel.onEvent(ScheduleEvent.LoadAlarms(selectedDate))
@@ -143,11 +154,48 @@ fun ScheduleScreen(
                             .weight(1f),
                         selectedDate = selectedDate,
                         selectedDateAlarms = (uiState as ScheduleUiState.Success).alarms,
+                        onAlarmClick = { alarm ->
+                            selectedAlarm = alarm
+                            showBottomSheet = true
+                        }
                     )
                 }
 
                 is ScheduleUiState.Error -> {}
             }
+        }
+    }
+
+    // ModalBottomSheet
+    if (showBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBottomSheet = false },
+            sheetState = bottomSheetState
+        ) {
+            AlarmActionBottomSheet(
+                selectedAlarm = selectedAlarm,
+                onSetAlarmInOneMinute = {
+                    selectedAlarm?.let { alarm ->
+                        // TODO: ViewModel에 1분 후 알람 설정 이벤트 추가
+                        scope.launch {
+                            snackbarHostState.showSnackbar("1분 후에 알람이 울립니다")
+                        }
+                    }
+                    showBottomSheet = false
+                },
+                onEditSchedule = {
+                    selectedAlarm?.let { alarm ->
+                        // TODO: ViewModel에 스케줄 수정 이벤트 추가
+                        scope.launch {
+                            snackbarHostState.showSnackbar("스케줄 수정 화면으로 이동")
+                        }
+                    }
+                    showBottomSheet = false
+                },
+                onDismiss = {
+                    showBottomSheet = false
+                }
+            )
         }
     }
 }
@@ -212,6 +260,7 @@ private fun AlarmListSection(
     modifier: Modifier = Modifier,
     selectedDate: LocalDate,
     selectedDateAlarms: List<AlarmWithStatus>,
+    onAlarmClick: (AlarmWithStatus) -> Unit = {},
 ) {
     Column(modifier = modifier) {
         AlarmListHeader(
@@ -221,6 +270,7 @@ private fun AlarmListSection(
 
         AlarmList(
             alarms = selectedDateAlarms,
+            onAlarmClick = onAlarmClick,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
@@ -245,13 +295,17 @@ private fun AlarmListHeader(
 private fun AlarmList(
     alarms: List<AlarmWithStatus>,
     modifier: Modifier = Modifier,
+    onAlarmClick: (AlarmWithStatus) -> Unit = {},
 ) {
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(alarms) { alarmWithStatus ->
-            AlarmItem(alarmWithStatus = alarmWithStatus)
+            AlarmItem(
+                alarmWithStatus = alarmWithStatus,
+                onClick = { onAlarmClick(alarmWithStatus) }
+            )
             Spacer(modifier = Modifier.height(height = 2.dp))
         }
 
@@ -352,12 +406,15 @@ private fun DayContent(
 @Composable
 private fun AlarmItem(
     alarmWithStatus: AlarmWithStatus,
+    onClick: () -> Unit = {},
 ) {
     val alarm = alarmWithStatus.alarm
     val takeStatus = alarmWithStatus.takeStatus
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -497,5 +554,54 @@ private fun AlarmTakeStatus(
                 modifier = Modifier.padding(top = 2.dp)
             )
         }
+    }
+}
+
+@Composable
+private fun AlarmActionBottomSheet(
+    selectedAlarm: AlarmWithStatus?,
+    onSetAlarmInOneMinute: () -> Unit,
+    onEditSchedule: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        selectedAlarm?.let { alarm ->
+            Text(
+                text = "${alarm.alarm.medicationName} 알람",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                text = "${
+                    alarm.alarm.hour.toString().padStart(2, '0')
+                }:${alarm.alarm.minute.toString().padStart(2, '0')}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
+
+        Button(
+            onClick = onSetAlarmInOneMinute,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("1분뒤에 알람 울리기")
+        }
+
+        Button(
+            onClick = onEditSchedule,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("스케줄 수정하기")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 } 
