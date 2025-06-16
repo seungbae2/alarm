@@ -588,11 +588,17 @@ private fun AlarmActionBottomSheet(
             )
         }
 
-        Button(
-            onClick = onSetAlarmInOneMinute,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("1분뒤에 알람 울리기")
+        // 이미 완료된 알람인지 확인
+        val isActionDone = selectedAlarm?.takeStatus != null
+
+        // 1분뒤 알람 버튼 (완료된 경우 숨김)
+        if (!isActionDone) {
+            Button(
+                onClick = onSetAlarmInOneMinute,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("1분뒤에 알람 울리기")
+            }
         }
 
         Button(
