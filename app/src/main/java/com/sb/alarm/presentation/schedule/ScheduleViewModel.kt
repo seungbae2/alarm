@@ -45,6 +45,9 @@ class ScheduleViewModel @Inject constructor(
             is ScheduleEvent.SetAlarmInOneMinute -> {
                 setAlarmInOneMinute(event.alarmWithStatus)
             }
+            is ScheduleEvent.EditSchedule -> {
+                editSchedule(event.alarmWithStatus)
+            }
         }
     }
 
@@ -113,6 +116,12 @@ class ScheduleViewModel @Inject constructor(
             } catch (e: Exception) {
                 _effect.send(ScheduleEffect.ShowToast("알람 설정에 실패했습니다: ${e.message}"))
             }
+        }
+    }
+
+    private fun editSchedule(alarmWithStatus: AlarmWithStatus) {
+        viewModelScope.launch {
+            _effect.send(ScheduleEffect.NavigateToEditSchedule(alarmWithStatus))
         }
     }
 } 

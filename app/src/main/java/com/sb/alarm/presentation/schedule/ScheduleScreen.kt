@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import com.kizitonwose.calendar.compose.WeekCalendar
 import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarState
 import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
@@ -61,7 +62,6 @@ import com.sb.alarm.shared.util.toKoreanDateString
 import com.sb.alarm.shared.util.toKoreanMonth
 import com.sb.alarm.shared.util.toKoreanString
 import com.sb.alarm.shared.util.toKotlinDayOfWeek
-import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
@@ -79,6 +79,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleScreen(
+    navController: NavController,
     viewModel: ScheduleViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -90,7 +91,7 @@ fun ScheduleScreen(
     var showBottomSheet by remember { mutableStateOf(false) }
 
     val bottomSheetState = rememberModalBottomSheetState()
-    val scope = rememberCoroutineScope()
+    rememberCoroutineScope()
 
     LaunchedEffect(selectedDate) {
         viewModel.onEvent(ScheduleEvent.LoadAlarms(selectedDate))
@@ -100,6 +101,9 @@ fun ScheduleScreen(
         viewModel.effect.collect {
             when (it) {
                 is ScheduleEffect.ShowToast -> snackbarHostState.showSnackbar(it.message)
+                is ScheduleEffect.NavigateToEditSchedule -> {
+                    navController.navigate("updateSchedule/${it.alarmWithStatus.alarm.id}")
+                }
             }
         }
     }
@@ -182,10 +186,7 @@ fun ScheduleScreen(
                 },
                 onEditSchedule = {
                     selectedAlarm?.let { alarm ->
-                        // TODO: ViewModel에 스케줄 수정 이벤트 추가
-                        scope.launch {
-                            snackbarHostState.showSnackbar("스케줄 수정 화면으로 이동")
-                        }
+                        viewModel.onEvent(ScheduleEvent.EditSchedule(alarm))
                     }
                     showBottomSheet = false
                 },
