@@ -66,19 +66,19 @@ class AlarmViewModel @Inject constructor(
         }
     }
 
-    fun onEvent(event: AlarmUiEvent, alarmId: Int) {
+    fun onEvent(event: AlarmUiEvent, alarmId: Int, isOneMinuteLaterAlarm: Boolean = false) {
         when (event) {
-            is AlarmUiEvent.TakeCompleted -> handleTakeCompleted(alarmId)
-            is AlarmUiEvent.Dismiss -> handleDismiss(alarmId)
+            is AlarmUiEvent.TakeCompleted -> handleTakeCompleted(alarmId, isOneMinuteLaterAlarm)
+            is AlarmUiEvent.Dismiss -> handleDismiss(alarmId, isOneMinuteLaterAlarm)
         }
     }
 
-    private fun handleTakeCompleted(alarmId: Int) {
+    private fun handleTakeCompleted(alarmId: Int, isOneMinuteLaterAlarm: Boolean = false) {
         viewModelScope.launch {
             try {
                 val currentUiState = _uiState.value
                 if (currentUiState is AlarmUiState.Success) {
-                    saveAlarmHistory(alarmId, TakeStatus.TAKEN)
+                    saveAlarmHistory(alarmId, TakeStatus.TAKEN, isOneMinuteLaterAlarm)
                     scheduleNextAlarmIfRepeating(currentUiState.alarm, alarmId)
                     _alarmEffect.send(AlarmEffect.NavigateToSchedule)
                 }
@@ -88,12 +88,12 @@ class AlarmViewModel @Inject constructor(
         }
     }
 
-    private fun handleDismiss(alarmId: Int) {
+    private fun handleDismiss(alarmId: Int, isOneMinuteLaterAlarm: Boolean = false) {
         viewModelScope.launch {
             try {
                 val currentUiState = _uiState.value
                 if (currentUiState is AlarmUiState.Success) {
-                    saveAlarmHistory(alarmId, TakeStatus.SKIPPED)
+                    saveAlarmHistory(alarmId, TakeStatus.SKIPPED, isOneMinuteLaterAlarm)
                     scheduleNextAlarmIfRepeating(currentUiState.alarm, alarmId)
                     _alarmEffect.send(AlarmEffect.NavigateToScheduleAfterDismiss)
                 }
@@ -117,7 +117,7 @@ class AlarmViewModel @Inject constructor(
 
     // Private helper methods
 
-    private suspend fun saveAlarmHistory(alarmId: Int, status: TakeStatus) {
+    private suspend fun saveAlarmHistory(alarmId: Int, status: TakeStatus, isOneMinuteLaterAlarm: Boolean = false) {
         val today = Clock.System.now()
             .toLocalDateTime(TimeZone.currentSystemDefault())
             .date.toString()
@@ -126,7 +126,8 @@ class AlarmViewModel @Inject constructor(
             alarmId = alarmId,
             logDate = today,
             status = status,
-            actionTimestamp = System.currentTimeMillis()
+            actionTimestamp = System.currentTimeMillis(),
+            isOneMinuteLaterAlarm = isOneMinuteLaterAlarm
         )
         alarmRepository.saveAlarmHistory(history)
     }

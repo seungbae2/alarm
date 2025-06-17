@@ -87,12 +87,12 @@ class AlarmRepositoryImpl @Inject constructor(
                 System.currentTimeMillis()
             )
         } else {
-            // 기존 히스토리가 없으면 새로 생성 (상태는 아직 대기 중으로)
+            // 기존 히스토리가 없으면 새로 생성
             val newHistory = AlarmHistory(
                 alarmId = alarmId,
                 logDate = date,
-                status = TakeStatus.NOT_ACTION, // 기본값 (실제로는 아직 복용하지 않음을 나타내려면 새로운 상태가 필요)
-                actionTimestamp = 0, // 아직 복용하지 않음
+                status = TakeStatus.NOT_ACTION, // 기본 상태: 아직 조치하지 않음
+                actionTimestamp = 0, // 아직 조치하지 않음
                 oneMinuteLaterTime = oneMinuteLaterTime,
                 oneMinuteLaterScheduledAt = System.currentTimeMillis()
             )

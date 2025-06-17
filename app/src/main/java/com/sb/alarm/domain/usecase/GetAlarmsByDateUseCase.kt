@@ -27,13 +27,18 @@ class GetAlarmsByDateUseCase @Inject constructor(
             alarms.filter { alarm ->
                 shouldAlarmTriggerOnDate(alarm, date)
             }.map { alarm ->
-                val history = histories.find { it.alarmId == alarm.id }
+                // 해당 알람의 히스토리 중 가장 최근에 저장된 것(id가 가장 큰 것)을 선택
+                val history = histories
+                    .filter { it.alarmId == alarm.id }
+                    .maxByOrNull { it.id }
+                    
                 AlarmWithStatus(
                     alarm = alarm,
                     takeStatus = history?.status ?: TakeStatus.NOT_ACTION,
                     actionTimestamp = history?.actionTimestamp,
                     oneMinuteLaterTime = history?.oneMinuteLaterTime,
-                    oneMinuteLaterScheduledAt = history?.oneMinuteLaterScheduledAt
+                    oneMinuteLaterScheduledAt = history?.oneMinuteLaterScheduledAt,
+                    isOneMinuteLaterAlarm = history?.isOneMinuteLaterAlarm ?: false
                 )
             }.sortedBy { it.alarm.hour * 60 + it.alarm.minute } // 시간순 오름차순 정렬
         }

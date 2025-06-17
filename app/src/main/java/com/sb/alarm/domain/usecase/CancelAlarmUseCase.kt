@@ -13,14 +13,14 @@ class CancelAlarmUseCase @Inject constructor(
      * @param alarmId 취소할 알람의 ID
      * @return 성공 여부
      */
-    suspend operator fun invoke(alarmId: Int): Boolean {
+    operator fun invoke(alarmId: Int): Boolean {
         return try {
             // 1. 데이터베이스에서 알람 비활성화
-            alarmRepository.updateAlarmActiveStatus(alarmId, false)
-            
+//            alarmRepository.updateAlarmActiveStatus(alarmId, false)
+
             // 2. AlarmManager에서 알람 취소
             alarmSchedulerRepository.cancel(alarmId)
-            
+
             true
         } catch (e: Exception) {
             false

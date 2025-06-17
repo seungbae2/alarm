@@ -26,6 +26,7 @@ class AlarmService : Service() {
     private var mediaPlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
     private var wakeLock: PowerManager.WakeLock? = null
+    private var isOneMinuteLaterAlarm: Boolean = false // 1분뒤 알람 플래그 저장
 
     companion object {
         const val ACTION_START_ALARM = "com.sb.alarm.ACTION_START_ALARM"
@@ -42,10 +43,11 @@ class AlarmService : Service() {
             ACTION_START_ALARM -> {
                 val alarmId = intent.getIntExtra("ALARM_ID", -1)
                 val medicationName = intent.getStringExtra("MEDICATION_NAME") ?: "알 수 없는 약물"
+                isOneMinuteLaterAlarm = intent.getBooleanExtra("IS_ONE_MINUTE_LATER", false) // 플래그 저장
 
                 Log.d(
                     "AlarmService",
-                    "Starting alarm for ID: $alarmId, medication: $medicationName"
+                    "Starting alarm for ID: $alarmId, medication: $medicationName, isOneMinuteLater: $isOneMinuteLaterAlarm"
                 )
 
                 // 포그라운드 서비스 시작
@@ -99,6 +101,7 @@ class AlarmService : Service() {
         val fullScreenIntent = Intent(this, AlarmActivity::class.java).apply {
             putExtra("ALARM_ID", alarmId)
             putExtra("MEDICATION_NAME", medicationName)
+            putExtra("IS_ONE_MINUTE_LATER", isOneMinuteLaterAlarm) // 1분뒤 알람 플래그 전달
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP or
@@ -302,7 +305,8 @@ class AlarmService : Service() {
             val intent = Intent(this, AlarmActivity::class.java).apply {
                 putExtra("ALARM_ID", alarmId)
                 putExtra("MEDICATION_NAME", medicationName)
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                putExtra("IS_ONE_MINUTE_LATER", isOneMinuteLaterAlarm) // 1분뒤 알람 플래그 전달
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TOP or
                         Intent.FLAG_ACTIVITY_SINGLE_TOP or
                         Intent.FLAG_ACTIVITY_NO_USER_ACTION or
@@ -310,7 +314,7 @@ class AlarmService : Service() {
                         Intent.FLAG_ACTIVITY_NO_HISTORY
             }
             startActivity(intent)
-            Log.d("AlarmService", "Alarm activity launched for ID: $alarmId")
+            Log.d("AlarmService", "Alarm activity launched for ID: $alarmId, isOneMinuteLater: $isOneMinuteLaterAlarm")
         } catch (e: Exception) {
             Log.e("AlarmService", "Failed to launch alarm activity for ID: $alarmId", e)
             // Activity 실행 실패 시 알림이 이미 표시되고 있으므로 추가 처리 불필요

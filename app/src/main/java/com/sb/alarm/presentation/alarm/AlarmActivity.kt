@@ -41,6 +41,8 @@ class AlarmActivity : ComponentActivity() {
         setupWindowFlags()
 
         val alarmId = intent.getIntExtra("ALARM_ID", -1)
+        val isOneMinuteLaterAlarm = intent.getBooleanExtra("IS_ONE_MINUTE_LATER", false)
+        
         if (alarmId == -1) {
             Log.e("AlarmActivity", "Invalid alarm ID")
             finish()
@@ -48,7 +50,7 @@ class AlarmActivity : ComponentActivity() {
         }
 
         currentAlarmId = alarmId
-        Log.d("AlarmActivity", "AlarmActivity started for alarm ID: $alarmId")
+        Log.d("AlarmActivity", "AlarmActivity started for alarm ID: $alarmId, isOneMinuteLaterAlarm: $isOneMinuteLaterAlarm")
 
         // 화면 모니터링 시작
         startScreenMonitoring()
@@ -100,7 +102,7 @@ class AlarmActivity : ComponentActivity() {
                     AlarmScreen(
                         uiState = uiState,
                         onEvent = { event ->
-                            viewModel.onEvent(event, alarmId)
+                            viewModel.onEvent(event, alarmId, isOneMinuteLaterAlarm)
                         }
                     )
                 }
@@ -228,6 +230,7 @@ class AlarmActivity : ComponentActivity() {
             val intent = Intent(this, AlarmActivity::class.java).apply {
                 putExtra("ALARM_ID", currentAlarmId)
                 putExtra("MEDICATION_NAME", intent.getStringExtra("MEDICATION_NAME"))
+                putExtra("IS_ONE_MINUTE_LATER", intent.getBooleanExtra("IS_ONE_MINUTE_LATER", false))
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_CLEAR_TOP or
                         Intent.FLAG_ACTIVITY_SINGLE_TOP or
@@ -248,6 +251,7 @@ class AlarmActivity : ComponentActivity() {
                     val intent = Intent(this, AlarmActivity::class.java).apply {
                         putExtra("ALARM_ID", currentAlarmId)
                         putExtra("MEDICATION_NAME", intent.getStringExtra("MEDICATION_NAME"))
+                        putExtra("IS_ONE_MINUTE_LATER", intent.getBooleanExtra("IS_ONE_MINUTE_LATER", false))
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                                 Intent.FLAG_ACTIVITY_CLEAR_TOP or
                                 Intent.FLAG_ACTIVITY_SINGLE_TOP or

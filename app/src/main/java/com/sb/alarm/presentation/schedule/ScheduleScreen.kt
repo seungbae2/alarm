@@ -472,6 +472,7 @@ private fun AlarmItem(
                     AlarmTakeStatus(
                         takeStatus = takeStatus,
                         actionTimestamp = alarmWithStatus.actionTimestamp,
+                        isOneMinuteLaterAlarm = alarmWithStatus.isOneMinuteLaterAlarm,
                         modifier = Modifier.padding(top = 2.dp)
                     )
                 }
@@ -561,6 +562,7 @@ private fun AlarmRepeatInfo(
 private fun AlarmTakeStatus(
     takeStatus: TakeStatus,
     actionTimestamp: Long?,
+    isOneMinuteLaterAlarm: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val (statusText, statusColor) = when (takeStatus) {
@@ -576,6 +578,17 @@ private fun AlarmTakeStatus(
             color = statusColor,
             fontWeight = if (takeStatus != TakeStatus.NOT_ACTION) FontWeight.Medium else FontWeight.Normal
         )
+
+        // 1분뒤 알람으로 인한 히스토리인 경우 표시
+        if (isOneMinuteLaterAlarm && takeStatus != TakeStatus.NOT_ACTION) {
+            Text(
+                text = "🔔 1분뒤 알람으로 처리됨",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
 
         // 처리 시간 표시 (처리된 경우만)
         if (takeStatus != TakeStatus.NOT_ACTION && actionTimestamp != null) {

@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.room.Room
 import com.sb.alarm.data.datasource.database.AppDatabase
 import com.sb.alarm.data.datasource.database.migration.MIGRATION_6_7
+import com.sb.alarm.data.datasource.database.migration.MIGRATION_7_8
+import com.sb.alarm.data.datasource.database.migration.MIGRATION_8_9
+import com.sb.alarm.data.datasource.database.migration.MIGRATION_9_10
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,7 +26,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "alarm_database"
         )
-        .addMigrations(MIGRATION_6_7)  // 6에서 7로 마이그레이션 추가
+        .addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)  // 마이그레이션 추가: 6→7, 7→8, 8→9, 9→10
         .build()
     }
 }

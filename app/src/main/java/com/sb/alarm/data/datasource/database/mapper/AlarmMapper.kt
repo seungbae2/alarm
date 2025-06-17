@@ -37,22 +37,26 @@ fun Alarm.toEntity(): AlarmEntity {
 
 fun AlarmHistoryEntity.toDomainModel(): AlarmHistory {
     return AlarmHistory(
+        id = id,
         alarmId = alarmId,
         logDate = logDate,
         status = status,
         actionTimestamp = actionTimestamp,
         oneMinuteLaterTime = oneMinuteLaterTime,
-        oneMinuteLaterScheduledAt = oneMinuteLaterScheduledAt
+        oneMinuteLaterScheduledAt = oneMinuteLaterScheduledAt,
+        isOneMinuteLaterAlarm = isOneMinuteLaterAlarm
     )
 }
 
 fun AlarmHistory.toEntity(): AlarmHistoryEntity {
     return AlarmHistoryEntity(
+        id = id,
         alarmId = alarmId,
         logDate = logDate,
         status = status,
         actionTimestamp = actionTimestamp,
         oneMinuteLaterTime = oneMinuteLaterTime,
-        oneMinuteLaterScheduledAt = oneMinuteLaterScheduledAt
+        oneMinuteLaterScheduledAt = oneMinuteLaterScheduledAt,
+        isOneMinuteLaterAlarm = isOneMinuteLaterAlarm
     )
 } 

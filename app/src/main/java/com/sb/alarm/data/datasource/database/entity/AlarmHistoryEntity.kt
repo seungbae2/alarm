@@ -2,6 +2,7 @@ package com.sb.alarm.data.datasource.database.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.PrimaryKey
 import com.sb.alarm.shared.constants.TakeStatus
 
 @Entity(
@@ -14,11 +15,12 @@ import com.sb.alarm.shared.constants.TakeStatus
             childColumns = ["alarmId"],
             onDelete = ForeignKey.CASCADE // 원본 알람 삭제 시 관련 기록도 모두 삭제
         )
-    ],
-    // 특정 날짜와 알람 ID의 조합은 유일해야 하므로 복합 기본 키로 설정
-    primaryKeys = ["alarmId", "logDate"]
+    ]
 )
 data class AlarmHistoryEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0, // auto-generated primary key로 진짜 히스토리 관리
+    
     val alarmId: Int, // 어떤 알람에 대한 기록인지 (Alarm의 id와 연결)
 
     val logDate: String, // 기록 날짜 (예: "2025-06-10")
@@ -30,4 +32,5 @@ data class AlarmHistoryEntity(
     // 1분뒤 알람 관련 필드
     val oneMinuteLaterTime: String? = null, // "14:35" 형식
     val oneMinuteLaterScheduledAt: Long? = null, // 1분뒤 알람이 설정된 시간
+    val isOneMinuteLaterAlarm: Boolean = false, // 1분뒤 알람으로 인한 히스토리인지 여부
 ) 

@@ -12,8 +12,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface AlarmHistoryDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(history: AlarmHistoryEntity)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insert(history: AlarmHistoryEntity): Long
 
     @Update
     suspend fun update(history: AlarmHistoryEntity)

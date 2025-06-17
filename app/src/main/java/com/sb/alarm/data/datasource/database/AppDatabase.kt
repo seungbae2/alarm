@@ -14,7 +14,7 @@ import com.sb.alarm.data.datasource.database.entity.AlarmHistoryEntity
         AlarmEntity::class,
         AlarmHistoryEntity::class
     ],
-    version = 7, // 1분뒤 알람 히스토리 필드 추가로 버전 업그레이드
+    version = 10, // 1분뒤 알람 플래그 필드 추가로 버전 업그레이드
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)

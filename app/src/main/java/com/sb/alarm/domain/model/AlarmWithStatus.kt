@@ -13,4 +13,5 @@ data class AlarmWithStatus(
     // 1분뒤 알람 관련 정보
     val oneMinuteLaterTime: String? = null, // "14:35" 형식
     val oneMinuteLaterScheduledAt: Long? = null, // 1분뒤 알람이 설정된 시간
+    val isOneMinuteLaterAlarm: Boolean = false, // 1분뒤 알람으로 인한 히스토리인지 여부
 ) 
