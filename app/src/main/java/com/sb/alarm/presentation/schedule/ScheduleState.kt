@@ -13,6 +13,7 @@ sealed class ScheduleUiState {
 sealed class ScheduleEvent {
     data class LoadAlarms(val date: LocalDate) : ScheduleEvent()
     data object AddAlarm : ScheduleEvent()
+    data class SetAlarmInOneMinute(val alarmWithStatus: AlarmWithStatus) : ScheduleEvent()
 }
 
 sealed class ScheduleEffect {

@@ -7,6 +7,10 @@ import com.sb.alarm.shared.constants.TakeStatus
  */
 data class AlarmWithStatus(
     val alarm: Alarm,
-    val takeStatus: TakeStatus? = null, // null이면 아직 복용하지 않음
+    val takeStatus: TakeStatus = TakeStatus.NOT_ACTION, // 기본값은 아직 조치하지 않음
     val actionTimestamp: Long? = null, // 복용/스킵 처리한 시간
+    
+    // 1분뒤 알람 관련 정보
+    val oneMinuteLaterTime: String? = null, // "14:35" 형식
+    val oneMinuteLaterScheduledAt: Long? = null, // 1분뒤 알람이 설정된 시간
 ) 

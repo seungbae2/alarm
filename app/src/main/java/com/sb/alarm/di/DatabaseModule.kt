@@ -3,6 +3,7 @@ package com.sb.alarm.di
 import android.content.Context
 import androidx.room.Room
 import com.sb.alarm.data.datasource.database.AppDatabase
+import com.sb.alarm.data.datasource.database.migration.MIGRATION_6_7
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,6 +22,8 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "alarm_database"
-        ).fallbackToDestructiveMigration().build()
+        )
+        .addMigrations(MIGRATION_6_7)  // 6에서 7로 마이그레이션 추가
+        .build()
     }
 }

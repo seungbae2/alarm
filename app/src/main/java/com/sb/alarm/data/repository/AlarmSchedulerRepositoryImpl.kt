@@ -369,4 +369,59 @@ class AlarmSchedulerRepositoryImpl @Inject constructor(
             DayOfWeek.SATURDAY -> 6
         }
     }
+    
+    override fun scheduleOneTimeAlarm(alarmItem: Alarm) {
+        try {
+            // 현재 시간 + 1분 계산
+            val triggerAtMillis = System.currentTimeMillis() + (60 * 1000) // 1분 = 60초
+            
+            val intent = Intent(context, AlarmReceiver::class.java).apply {
+                putExtra("ALARM_ID", alarmItem.id)
+                putExtra("MEDICATION_NAME", alarmItem.medicationName)
+                putExtra("IS_ONE_MINUTE_LATER", true) // 1분뒤 알람 플래그
+            }
+
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                alarmItem.id + 10000, // 1분뒤 알람용 고유 ID (기존 알람과 충돌 방지)
+                intent,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                } else {
+                    PendingIntent.FLAG_UPDATE_CURRENT
+                }
+            )
+
+            // 정확한 시간에 알람이 울리도록 설정
+            when {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerAtMillis,
+                        pendingIntent
+                    )
+                }
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> {
+                    alarmManager.setAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerAtMillis,
+                        pendingIntent
+                    )
+                }
+                else -> {
+                    alarmManager.set(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerAtMillis,
+                        pendingIntent
+                    )
+                }
+            }
+            
+            Log.d("AlarmScheduler", "Scheduled one-time alarm ID ${alarmItem.id} for 1 minute later")
+            
+        } catch (e: Exception) {
+            Log.e("AlarmScheduler", "Failed to schedule one-time alarm: ${alarmItem.id}", e)
+            throw e
+        }
+    }
 }

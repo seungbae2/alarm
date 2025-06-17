@@ -18,13 +18,18 @@ class AlarmReceiver : BroadcastReceiver() {
         val alarmId = intent.getIntExtra("ALARM_ID", -1)
         val medicationName = intent.getStringExtra("MEDICATION_NAME") ?: "알 수 없는 약물"
         val repeatType = intent.getStringExtra("REPEAT_TYPE") ?: ""
+        val isOneMinuteLater = intent.getBooleanExtra("IS_ONE_MINUTE_LATER", false)
 
         if (alarmId == -1) {
             Log.w("AlarmReceiver", "Invalid alarm ID received")
             return
         }
 
-        Log.i("AlarmReceiver", "Alarm received for ID: $alarmId, medication: $medicationName, repeatType: $repeatType")
+        if (isOneMinuteLater) {
+            Log.i("AlarmReceiver", "One-minute-later alarm received for ID: $alarmId, medication: $medicationName")
+        } else {
+            Log.i("AlarmReceiver", "Regular alarm received for ID: $alarmId, medication: $medicationName, repeatType: $repeatType")
+        }
 
         // 백그라운드 처리를 위한 goAsync() 사용
         val pendingResult = goAsync()
@@ -38,6 +43,7 @@ class AlarmReceiver : BroadcastReceiver() {
                     putExtra("ALARM_ID", alarmId)
                     putExtra("MEDICATION_NAME", medicationName)
                     putExtra("REPEAT_TYPE", repeatType)
+                    putExtra("IS_ONE_MINUTE_LATER", isOneMinuteLater)
                 }
 
                 // Android 8.0 이상에서는 foregroundService로 시작해야 함

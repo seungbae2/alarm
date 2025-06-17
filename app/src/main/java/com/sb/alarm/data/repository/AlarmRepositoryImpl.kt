@@ -69,4 +69,34 @@ class AlarmRepositoryImpl @Inject constructor(
     override suspend fun updateAlarmStatus(alarmId: Int, date: String, status: TakeStatus) {
         alarmHistoryDao.updateStatus(alarmId, date, status, System.currentTimeMillis())
     }
+
+    override suspend fun saveOneMinuteLaterHistory(
+        alarmId: Int,
+        date: String,
+        oneMinuteLaterTime: String,
+    ) {
+        // 기존 히스토리가 있는지 확인
+        val existingHistory = alarmHistoryDao.getHistoryByAlarmAndDate(alarmId, date)
+
+        if (existingHistory != null) {
+            // 기존 히스토리가 있으면 1분뒤 알람 정보만 업데이트
+            alarmHistoryDao.updateOneMinuteLaterInfo(
+                alarmId,
+                date,
+                oneMinuteLaterTime,
+                System.currentTimeMillis()
+            )
+        } else {
+            // 기존 히스토리가 없으면 새로 생성 (상태는 아직 대기 중으로)
+            val newHistory = AlarmHistory(
+                alarmId = alarmId,
+                logDate = date,
+                status = TakeStatus.NOT_ACTION, // 기본값 (실제로는 아직 복용하지 않음을 나타내려면 새로운 상태가 필요)
+                actionTimestamp = 0, // 아직 복용하지 않음
+                oneMinuteLaterTime = oneMinuteLaterTime,
+                oneMinuteLaterScheduledAt = System.currentTimeMillis()
+            )
+            saveAlarmHistory(newHistory)
+        }
+    }
 } 

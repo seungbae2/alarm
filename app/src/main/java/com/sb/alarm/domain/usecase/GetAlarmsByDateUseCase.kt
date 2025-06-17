@@ -4,6 +4,7 @@ import com.sb.alarm.domain.model.Alarm
 import com.sb.alarm.domain.model.AlarmWithStatus
 import com.sb.alarm.domain.repository.AlarmRepository
 import com.sb.alarm.shared.constants.RepeatType
+import com.sb.alarm.shared.constants.TakeStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.datetime.DayOfWeek
@@ -29,8 +30,10 @@ class GetAlarmsByDateUseCase @Inject constructor(
                 val history = histories.find { it.alarmId == alarm.id }
                 AlarmWithStatus(
                     alarm = alarm,
-                    takeStatus = history?.status,
-                    actionTimestamp = history?.actionTimestamp
+                    takeStatus = history?.status ?: TakeStatus.NOT_ACTION,
+                    actionTimestamp = history?.actionTimestamp,
+                    oneMinuteLaterTime = history?.oneMinuteLaterTime,
+                    oneMinuteLaterScheduledAt = history?.oneMinuteLaterScheduledAt
                 )
             }.sortedBy { it.alarm.hour * 60 + it.alarm.minute } // 시간순 오름차순 정렬
         }

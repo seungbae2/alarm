@@ -37,4 +37,16 @@ interface AlarmHistoryDao {
 
     @Query("DELETE FROM alarm_history WHERE alarmId = :alarmId")
     suspend fun deleteHistoryByAlarmId(alarmId: Int)
+
+    /** 1분뒤 알람 관련 메서드들 */
+    @Query("SELECT * FROM alarm_history WHERE alarmId = :alarmId AND logDate = :logDate")
+    suspend fun getHistoryByAlarmAndDate(alarmId: Int, logDate: String): AlarmHistoryEntity?
+
+    @Query("UPDATE alarm_history SET oneMinuteLaterTime = :oneMinuteLaterTime, oneMinuteLaterScheduledAt = :scheduledAt WHERE alarmId = :alarmId AND logDate = :logDate")
+    suspend fun updateOneMinuteLaterInfo(
+        alarmId: Int,
+        logDate: String,
+        oneMinuteLaterTime: String,
+        scheduledAt: Long,
+    )
 } 

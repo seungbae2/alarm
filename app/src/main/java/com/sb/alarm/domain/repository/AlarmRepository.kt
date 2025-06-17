@@ -37,4 +37,7 @@ interface AlarmRepository {
 
     /** 알람 상태 업데이트 */
     suspend fun updateAlarmStatus(alarmId: Int, date: String, status: TakeStatus)
+    
+    /** 1분뒤 알람 히스토리 저장/업데이트 */
+    suspend fun saveOneMinuteLaterHistory(alarmId: Int, date: String, oneMinuteLaterTime: String)
 }

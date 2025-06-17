@@ -14,8 +14,8 @@ import com.sb.alarm.data.datasource.database.entity.AlarmHistoryEntity
         AlarmEntity::class,
         AlarmHistoryEntity::class
     ],
-    version = 6,
-    exportSchema = false
+    version = 7, // 1분뒤 알람 히스토리 필드 추가로 버전 업그레이드
+    exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)
 abstract class AppDatabase : RoomDatabase() {

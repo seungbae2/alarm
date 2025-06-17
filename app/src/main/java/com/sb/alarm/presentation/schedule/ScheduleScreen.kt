@@ -176,10 +176,7 @@ fun ScheduleScreen(
                 selectedAlarm = selectedAlarm,
                 onSetAlarmInOneMinute = {
                     selectedAlarm?.let { alarm ->
-                        // TODO: ViewModel에 1분 후 알람 설정 이벤트 추가
-                        scope.launch {
-                            snackbarHostState.showSnackbar("1분 후에 알람이 울립니다")
-                        }
+                        viewModel.onEvent(ScheduleEvent.SetAlarmInOneMinute(alarm))
                     }
                     showBottomSheet = false
                 },
@@ -416,7 +413,15 @@ private fun AlarmItem(
             .fillMaxWidth()
             .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        // 1분뒤 알람 구분을 위한 색상 변경
+        colors = if (alarmWithStatus.oneMinuteLaterTime != null) {
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            )
+        } else {
+            CardDefaults.cardColors()
+        }
     ) {
         Column(
             modifier = Modifier
@@ -431,9 +436,25 @@ private fun AlarmItem(
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
-                    AlarmTime(
-                        hour = alarm.hour,
-                        minute = alarm.minute
+                    // 1분뒤 알람이 설정된 경우 표시
+                    if (alarmWithStatus.oneMinuteLaterTime != null) {
+                        Text(
+                            text = "⏰ 1분 후 알람 (${alarmWithStatus.oneMinuteLaterTime})",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                    }
+
+                    // 1분뒤 알람이 설정된 경우 1분뒤 시간을 표시, 아니면 원래 시간 표시
+                    val displayTime = alarmWithStatus.oneMinuteLaterTime ?: "${
+                        alarm.hour.toString().padStart(2, '0')
+                    }:${alarm.minute.toString().padStart(2, '0')}"
+
+                    AlarmTimeDisplay(
+                        timeText = displayTime,
+                        isOneMinuteLater = alarmWithStatus.oneMinuteLaterTime != null
                     )
 
                     AlarmMedicationName(
@@ -468,6 +489,21 @@ private fun AlarmTime(
         text = "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}",
         style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.Bold
+    )
+}
+
+@Composable
+private fun AlarmTimeDisplay(
+    timeText: String,
+    isOneMinuteLater: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = timeText,
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold,
+        color = if (isOneMinuteLater) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+        modifier = modifier
     )
 }
 
@@ -523,14 +559,14 @@ private fun AlarmRepeatInfo(
 
 @Composable
 private fun AlarmTakeStatus(
-    takeStatus: TakeStatus?,
+    takeStatus: TakeStatus,
     actionTimestamp: Long?,
     modifier: Modifier = Modifier,
 ) {
     val (statusText, statusColor) = when (takeStatus) {
         TakeStatus.TAKEN -> "💊 복용 완료" to MaterialTheme.colorScheme.primary
         TakeStatus.SKIPPED -> "⏭️ 복용 스킵" to MaterialTheme.colorScheme.error
-        null -> "⏰ 대기 중" to MaterialTheme.colorScheme.onSurfaceVariant
+        TakeStatus.NOT_ACTION -> "⏰ 대기 중" to MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Column(modifier = modifier) {
@@ -538,11 +574,11 @@ private fun AlarmTakeStatus(
             text = statusText,
             style = MaterialTheme.typography.bodySmall,
             color = statusColor,
-            fontWeight = if (takeStatus != null) FontWeight.Medium else FontWeight.Normal
+            fontWeight = if (takeStatus != TakeStatus.NOT_ACTION) FontWeight.Medium else FontWeight.Normal
         )
 
         // 처리 시간 표시 (처리된 경우만)
-        if (takeStatus != null && actionTimestamp != null) {
+        if (takeStatus != TakeStatus.NOT_ACTION && actionTimestamp != null) {
             val timeString = remember(actionTimestamp) {
                 SimpleDateFormat("HH:mm", Locale.getDefault())
                     .format(Date(actionTimestamp))
@@ -589,10 +625,10 @@ private fun AlarmActionBottomSheet(
         }
 
         // 이미 완료된 알람인지 확인
-        val isActionDone = selectedAlarm?.takeStatus != null
+        val shouldShowOneMinuteButton = selectedAlarm?.takeStatus == TakeStatus.NOT_ACTION
 
-        // 1분뒤 알람 버튼 (완료된 경우 숨김)
-        if (!isActionDone) {
+        // 1분뒤 알람 버튼 (조건에 맞는 경우만 표시)
+        if (shouldShowOneMinuteButton) {
             Button(
                 onClick = onSetAlarmInOneMinute,
                 modifier = Modifier.fillMaxWidth()
@@ -601,6 +637,7 @@ private fun AlarmActionBottomSheet(
             }
         }
 
+        // 스케줄 수정 버튼 (항상 표시)
         Button(
             onClick = onEditSchedule,
             modifier = Modifier.fillMaxWidth()
