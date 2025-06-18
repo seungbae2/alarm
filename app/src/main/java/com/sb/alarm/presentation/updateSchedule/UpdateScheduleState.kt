@@ -10,11 +10,13 @@ sealed class UpdateScheduleUiState {
 
 sealed class UpdateScheduleEvent {
     data class LoadAlarm(val alarmId: Int) : UpdateScheduleEvent()
+    data class UpdateAlarm(val hour: Int, val minute: Int) : UpdateScheduleEvent()
     data object NavigateBack : UpdateScheduleEvent()
 }
 
 sealed class UpdateScheduleEffect {
     data class ShowToast(val message: String) : UpdateScheduleEffect()
     data object NavigateBack : UpdateScheduleEffect()
+    data object UpdateSuccess : UpdateScheduleEffect()
 }
 

@@ -49,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 
 data class AlarmTime(val hour: Int, val minute: Int)
@@ -64,6 +65,7 @@ fun UpdateScheduleScreen(
     navController: NavController,
     viewModel: UpdateScheduleViewModel = hiltViewModel(),
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     // UI 상태
@@ -93,6 +95,15 @@ fun UpdateScheduleScreen(
         viewModel.onEvent(UpdateScheduleEvent.LoadAlarm(alarmId))
     }
 
+    // 알람 데이터가 로드되면 dailyTime 초기화
+    LaunchedEffect(Unit) {
+        viewModel.uiState.collect { state ->
+            if (state is UpdateScheduleUiState.Success) {
+                dailyTime = AlarmTime(state.alarm.hour, state.alarm.minute)
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
@@ -101,6 +112,10 @@ fun UpdateScheduleScreen(
                 }
 
                 is UpdateScheduleEffect.NavigateBack -> {
+                    navController.popBackStack()
+                }
+
+                is UpdateScheduleEffect.UpdateSuccess -> {
                     navController.popBackStack()
                 }
             }
@@ -149,7 +164,17 @@ fun UpdateScheduleScreen(
 
             // 저장 버튼
             Button(
-                onClick = { /* TODO: 저장 로직 */ },
+                onClick = {
+                    if (selectedType == 1) {
+                        // 매일 한번씩 같은시간 선택 시 dailyTime 사용
+                        viewModel.onEvent(
+                            UpdateScheduleEvent.UpdateAlarm(
+                                hour = dailyTime.hour,
+                                minute = dailyTime.minute
+                            )
+                        )
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("변경사항 저장")

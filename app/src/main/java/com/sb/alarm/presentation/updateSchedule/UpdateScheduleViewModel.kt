@@ -2,6 +2,7 @@ package com.sb.alarm.presentation.updateSchedule
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sb.alarm.domain.model.Alarm
 import com.sb.alarm.domain.repository.AlarmRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -26,6 +27,7 @@ class UpdateScheduleViewModel @Inject constructor(
     fun onEvent(event: UpdateScheduleEvent) {
         when (event) {
             is UpdateScheduleEvent.LoadAlarm -> loadAlarm(event.alarmId)
+            is UpdateScheduleEvent.UpdateAlarm -> updateAlarm(event.hour, event.minute)
             is UpdateScheduleEvent.NavigateBack -> navigateBack()
         }
     }
@@ -42,6 +44,27 @@ class UpdateScheduleViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _uiState.value = UpdateScheduleUiState.Error("알람 로드 중 오류가 발생했습니다: ${e.message}")
+            }
+        }
+    }
+
+    private fun updateAlarm(hour: Int, minute: Int) {
+        viewModelScope.launch {
+            try {
+                val currentState = _uiState.value
+                if (currentState is UpdateScheduleUiState.Success) {
+                    val updatedAlarm = currentState.alarm.copy(
+                        hour = hour,
+                        minute = minute
+                    )
+                    alarmRepository.updateAlarm(updatedAlarm)
+                    _effect.send(UpdateScheduleEffect.ShowToast("알람이 성공적으로 수정되었습니다."))
+                    _effect.send(UpdateScheduleEffect.UpdateSuccess)
+                } else {
+                    _effect.send(UpdateScheduleEffect.ShowToast("알람 정보를 불러올 수 없습니다."))
+                }
+            } catch (e: Exception) {
+                _effect.send(UpdateScheduleEffect.ShowToast("알람 수정 중 오류가 발생했습니다: ${e.message}"))
             }
         }
     }
