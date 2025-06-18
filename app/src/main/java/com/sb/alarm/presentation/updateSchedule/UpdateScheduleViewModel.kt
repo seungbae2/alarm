@@ -2,7 +2,6 @@ package com.sb.alarm.presentation.updateSchedule
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sb.alarm.domain.model.Alarm
 import com.sb.alarm.domain.repository.AlarmRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -11,6 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 
 @HiltViewModel
@@ -27,7 +28,12 @@ class UpdateScheduleViewModel @Inject constructor(
     fun onEvent(event: UpdateScheduleEvent) {
         when (event) {
             is UpdateScheduleEvent.LoadAlarm -> loadAlarm(event.alarmId)
-            is UpdateScheduleEvent.UpdateAlarm -> updateAlarm(event.hour, event.minute)
+            is UpdateScheduleEvent.UpdateAlarm -> updateAlarm(
+                event.hour,
+                event.minute,
+                event.startDate
+            )
+
             is UpdateScheduleEvent.NavigateBack -> navigateBack()
         }
     }
@@ -48,17 +54,39 @@ class UpdateScheduleViewModel @Inject constructor(
         }
     }
 
-    private fun updateAlarm(hour: Int, minute: Int) {
+    private fun updateAlarm(hour: Int, minute: Int, startDate: String) {
         viewModelScope.launch {
             try {
                 val currentState = _uiState.value
                 if (currentState is UpdateScheduleUiState.Success) {
-                    val updatedAlarm = currentState.alarm.copy(
+                    val originalAlarm = currentState.alarm
+
+                    // 시작 날짜를 LocalDate로 파싱하고 타임스탬프로 변환
+                    val startLocalDate = LocalDate.parse(startDate)
+                    val startTimestamp =
+                        startLocalDate.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * 1000
+
+                    // 이전 날짜 계산 (시작 날짜 하루 전)
+                    val endLocalDate = startLocalDate.minusDays(1)
+                    val endTimestamp =
+                        endLocalDate.atTime(23, 59, 59).atZone(ZoneId.systemDefault())
+                            .toEpochSecond() * 1000
+
+                    // 1. 기존 알람의 종료 날짜를 설정하여 변경 전 날짜까지만 유효하게 함
+                    val updatedOriginalAlarm = originalAlarm.copy(endDate = endTimestamp)
+                    alarmRepository.updateAlarm(updatedOriginalAlarm)
+
+                    // 2. 새로운 알람을 생성 (선택한 날짜부터 새로운 시간으로 시작)
+                    val newAlarm = originalAlarm.copy(
+                        id = 0, // 새 알람이므로 ID 초기화
                         hour = hour,
-                        minute = minute
+                        minute = minute,
+                        startDate = startTimestamp,
+                        endDate = null // 새 알람은 종료 날짜 없음 (무기한)
                     )
-                    alarmRepository.updateAlarm(updatedAlarm)
-                    _effect.send(UpdateScheduleEffect.ShowToast("알람이 성공적으로 수정되었습니다."))
+                    alarmRepository.addAlarm(newAlarm)
+
+                    _effect.send(UpdateScheduleEffect.ShowToast("${startDate}부터 알람이 새로운 시간으로 변경되었습니다."))
                     _effect.send(UpdateScheduleEffect.UpdateSuccess)
                 } else {
                     _effect.send(UpdateScheduleEffect.ShowToast("알람 정보를 불러올 수 없습니다."))

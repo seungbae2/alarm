@@ -14,10 +14,14 @@ sealed class ScheduleEvent {
     data class LoadAlarms(val date: LocalDate) : ScheduleEvent()
     data object AddAlarm : ScheduleEvent()
     data class SetAlarmInOneMinute(val alarmWithStatus: AlarmWithStatus) : ScheduleEvent()
-    data class EditSchedule(val alarmWithStatus: AlarmWithStatus) : ScheduleEvent()
+    data class UpdateSchedule(val alarmWithStatus: AlarmWithStatus, val selectedDate: LocalDate) :
+        ScheduleEvent()
 }
 
 sealed class ScheduleEffect {
     data class ShowToast(val message: String) : ScheduleEffect()
-    data class NavigateToEditSchedule(val alarmWithStatus: AlarmWithStatus) : ScheduleEffect()
+    data class NavigateToEditSchedule(
+        val alarmWithStatus: AlarmWithStatus,
+        val selectedDate: LocalDate,
+    ) : ScheduleEffect()
 }

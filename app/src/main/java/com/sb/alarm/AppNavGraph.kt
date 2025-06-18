@@ -23,12 +23,17 @@ fun AppNavGraph(
         }
         
         composable(
-            route = "updateSchedule/{alarmId}",
-            arguments = listOf(navArgument("alarmId") { type = NavType.IntType })
+            route = "updateSchedule/{alarmId}/{selectedDate}",
+            arguments = listOf(
+                navArgument("alarmId") { type = NavType.IntType },
+                navArgument("selectedDate") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
             val alarmId = backStackEntry.arguments?.getInt("alarmId") ?: 0
+            val selectedDate = backStackEntry.arguments?.getString("selectedDate") ?: ""
             UpdateScheduleScreen(
                 alarmId = alarmId,
+                selectedDate = selectedDate,
                 navController = navController
             )
         }

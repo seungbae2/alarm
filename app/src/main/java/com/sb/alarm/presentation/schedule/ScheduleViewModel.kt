@@ -45,8 +45,9 @@ class ScheduleViewModel @Inject constructor(
             is ScheduleEvent.SetAlarmInOneMinute -> {
                 setAlarmInOneMinute(event.alarmWithStatus)
             }
-            is ScheduleEvent.EditSchedule -> {
-                editSchedule(event.alarmWithStatus)
+
+            is ScheduleEvent.UpdateSchedule -> {
+                updateSchedule(event.alarmWithStatus, event.selectedDate)
             }
         }
     }
@@ -119,9 +120,9 @@ class ScheduleViewModel @Inject constructor(
         }
     }
 
-    private fun editSchedule(alarmWithStatus: AlarmWithStatus) {
+    private fun updateSchedule(alarmWithStatus: AlarmWithStatus, selectedDate: LocalDate) {
         viewModelScope.launch {
-            _effect.send(ScheduleEffect.NavigateToEditSchedule(alarmWithStatus))
+            _effect.send(ScheduleEffect.NavigateToEditSchedule(alarmWithStatus, selectedDate))
         }
     }
 } 

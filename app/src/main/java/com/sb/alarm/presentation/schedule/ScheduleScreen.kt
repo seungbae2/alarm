@@ -102,7 +102,7 @@ fun ScheduleScreen(
             when (it) {
                 is ScheduleEffect.ShowToast -> snackbarHostState.showSnackbar(it.message)
                 is ScheduleEffect.NavigateToEditSchedule -> {
-                    navController.navigate("updateSchedule/${it.alarmWithStatus.alarm.id}")
+                    navController.navigate("updateSchedule/${it.alarmWithStatus.alarm.id}/${it.selectedDate}")
                 }
             }
         }
@@ -186,7 +186,7 @@ fun ScheduleScreen(
                 },
                 onEditSchedule = {
                     selectedAlarm?.let { alarm ->
-                        viewModel.onEvent(ScheduleEvent.EditSchedule(alarm))
+                        viewModel.onEvent(ScheduleEvent.UpdateSchedule(alarm, selectedDate))
                     }
                     showBottomSheet = false
                 },
