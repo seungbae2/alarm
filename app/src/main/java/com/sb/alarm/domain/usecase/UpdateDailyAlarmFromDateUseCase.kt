@@ -31,15 +31,16 @@ class UpdateDailyAlarmFromDateUseCase @Inject constructor(
             val now = LocalDate.now()
             val currentTime = java.time.LocalTime.now()
             val newAlarmTime = java.time.LocalTime.of(hour, minute)
-            
+
             // 현재 시간이 변경할 알람 시간보다 이후면 내일부터 시작, 아니면 오늘부터 시작
             val startLocalDate = if (currentTime.isAfter(newAlarmTime)) {
                 now.plusDays(1)
             } else {
                 now
             }
-            
-            val startTimestamp = startLocalDate.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * 1000
+
+            val startTimestamp =
+                startLocalDate.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * 1000
 
             // 이전 날짜 계산 (시작 날짜 하루 전)
             val endLocalDate = startLocalDate.minusDays(1)
@@ -50,10 +51,7 @@ class UpdateDailyAlarmFromDateUseCase @Inject constructor(
             val updatedOriginalAlarm = originalAlarm.copy(endDate = endTimestamp)
             alarmRepository.updateAlarm(updatedOriginalAlarm)
 
-            // 2. 기존 알람을 AlarmScheduler에서 취소
-            alarmSchedulerRepository.cancel(originalAlarm.id)
-
-            // 3. 새로운 알람을 생성 (선택한 날짜부터 새로운 시간으로 시작)
+            // 2. 새로운 알람을 생성 (선택한 날짜부터 새로운 시간으로 시작)
             val newAlarm = originalAlarm.copy(
                 id = 0, // 새 알람이므로 ID 초기화
                 hour = hour,
@@ -63,7 +61,7 @@ class UpdateDailyAlarmFromDateUseCase @Inject constructor(
             )
             val newAlarmId = alarmRepository.addAlarm(newAlarm)
 
-            // 4. 새로운 알람을 AlarmScheduler에 등록
+            // 3. 새로운 알람을 AlarmScheduler에 등록
             if (newAlarmId > 0) {
                 val savedNewAlarm = newAlarm.copy(id = newAlarmId.toInt())
                 alarmSchedulerRepository.schedule(savedNewAlarm)
