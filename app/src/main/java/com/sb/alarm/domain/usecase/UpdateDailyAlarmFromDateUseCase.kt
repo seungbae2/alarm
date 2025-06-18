@@ -12,26 +12,34 @@ class UpdateDailyAlarmFromDateUseCase @Inject constructor(
     private val alarmSchedulerRepository: AlarmSchedulerRepository,
 ) {
     /**
-     * 특정 날짜부터 매일 알람 시간을 변경합니다.
+     * 오늘부터 매일 알람 시간을 변경합니다.
+     * 현재 시간이 변경하려는 알람 시간보다 이후면 내일부터 변경됩니다.
      * 기존 알람은 변경 전날까지 유효하도록 종료하고, 새로운 시간으로 알람을 생성합니다.
      *
      * @param originalAlarm 기존 알람
      * @param hour 새로운 시간 (0-23)
      * @param minute 새로운 분 (0-59)
-     * @param startDate 변경 시작 날짜 ("2025-01-15" 형식)
-     * @return Result<Unit> 성공 여부
+     * @return Result<String> 성공 시 변경 시작 날짜 반환
      */
     suspend operator fun invoke(
         originalAlarm: Alarm,
         hour: Int,
         minute: Int,
-        startDate: String,
-    ): Result<Unit> {
+    ): Result<String> {
         return try {
-            // 시작 날짜를 LocalDate로 파싱하고 타임스탬프로 변환
-            val startLocalDate = LocalDate.parse(startDate)
-            val startTimestamp =
-                startLocalDate.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * 1000
+            // 현재 시간과 변경할 알람 시간을 비교하여 시작 날짜 결정
+            val now = LocalDate.now()
+            val currentTime = java.time.LocalTime.now()
+            val newAlarmTime = java.time.LocalTime.of(hour, minute)
+            
+            // 현재 시간이 변경할 알람 시간보다 이후면 내일부터 시작, 아니면 오늘부터 시작
+            val startLocalDate = if (currentTime.isAfter(newAlarmTime)) {
+                now.plusDays(1)
+            } else {
+                now
+            }
+            
+            val startTimestamp = startLocalDate.atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * 1000
 
             // 이전 날짜 계산 (시작 날짜 하루 전)
             val endLocalDate = startLocalDate.minusDays(1)
@@ -61,7 +69,7 @@ class UpdateDailyAlarmFromDateUseCase @Inject constructor(
                 alarmSchedulerRepository.schedule(savedNewAlarm)
             }
 
-            Result.success(Unit)
+            Result.success(startLocalDate.toString())
         } catch (e: Exception) {
             Result.failure(e)
         }

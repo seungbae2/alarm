@@ -32,8 +32,7 @@ class UpdateScheduleViewModel @Inject constructor(
             is UpdateScheduleEvent.LoadAlarm -> loadAlarm(event.alarmId)
             is UpdateScheduleEvent.UpdateAlarm -> updateAlarm(
                 event.hour,
-                event.minute,
-                event.startDate
+                event.minute
             )
 
             is UpdateScheduleEvent.UpdateAlternatingAlarm -> updateAlternatingAlarm(
@@ -61,7 +60,7 @@ class UpdateScheduleViewModel @Inject constructor(
         }
     }
 
-    private fun updateAlarm(hour: Int, minute: Int, startDate: String) {
+    private fun updateAlarm(hour: Int, minute: Int) {
         viewModelScope.launch {
             try {
                 val currentState = _uiState.value
@@ -72,12 +71,11 @@ class UpdateScheduleViewModel @Inject constructor(
                     val result = updateDailyAlarmFromDateUseCase(
                         originalAlarm = originalAlarm,
                         hour = hour,
-                        minute = minute,
-                        startDate = startDate
+                        minute = minute
                     )
 
-                    result.onSuccess {
-                        _effect.send(UpdateScheduleEffect.ShowToast("${startDate}부터 알람이 새로운 시간으로 변경되었습니다."))
+                    result.onSuccess { actualStartDate ->
+                        _effect.send(UpdateScheduleEffect.ShowToast("${actualStartDate}부터 알람이 새로운 시간으로 변경되었습니다."))
                         _effect.send(UpdateScheduleEffect.UpdateSuccess)
                     }.onFailure { error ->
                         _uiState.value =

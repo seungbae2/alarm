@@ -22,7 +22,6 @@ sealed class UpdateScheduleEvent {
     data class UpdateAlarm(
         val hour: Int,
         val minute: Int,
-        val startDate: String, // "2025-01-15" 형식
     ) : UpdateScheduleEvent()
 
     data class UpdateAlternatingAlarm(

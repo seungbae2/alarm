@@ -1,5 +1,6 @@
 package com.sb.alarm.presentation.updateSchedule
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -138,7 +138,7 @@ fun UpdateScheduleScreen(
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
         }
-        ) { paddingValues ->
+    ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -158,39 +158,38 @@ fun UpdateScheduleScreen(
                 )
 
                 // 하단 영역: 선택된 주기 알람시간 변경
-                            AlarmTimeSettingCard(
-                selectedType = selectedType,
-                dailyTime = dailyTime,
-                onDailyTimeChange = { dailyTime = it },
-                selectedDate = selectedDate,
-                changeStartDate = changeStartDate,
-                onChangeStartDateChange = { changeStartDate = it },
-                alternatingSteps = alternatingSteps,
-                onAlternatingStepsChange = { alternatingSteps = it }
-            )
+                AlarmTimeSettingCard(
+                    selectedType = selectedType,
+                    dailyTime = dailyTime,
+                    onDailyTimeChange = { dailyTime = it },
+                    selectedDate = selectedDate,
+                    changeStartDate = changeStartDate,
+                    onChangeStartDateChange = { changeStartDate = it },
+                    alternatingSteps = alternatingSteps,
+                    onAlternatingStepsChange = { alternatingSteps = it }
+                )
 
                 // 저장 버튼
                 Button(
-                                    onClick = { 
-                    if (selectedType == 1) {
-                        // 매일 한번씩 같은시간 선택 시 dailyTime과 전달받은 selectedDate 사용
-                        viewModel.onEvent(
-                            UpdateScheduleEvent.UpdateAlarm(
-                                hour = dailyTime.hour,
-                                minute = dailyTime.minute,
-                                startDate = selectedDate
+                    onClick = {
+                        if (selectedType == 1) {
+                            // 매일 한번씩 같은시간 선택 시 오늘부터 변경 (시간이 지났으면 내일부터)
+                            viewModel.onEvent(
+                                UpdateScheduleEvent.UpdateAlarm(
+                                    hour = dailyTime.hour,
+                                    minute = dailyTime.minute
+                                )
                             )
-                        )
-                    } else {
-                        // 교대형 알람 주기 선택 시 alternatingSteps와 changeStartDate 사용
-                        viewModel.onEvent(
-                            UpdateScheduleEvent.UpdateAlternatingAlarm(
-                                alternatingSteps = alternatingSteps,
-                                startDate = changeStartDate
+                        } else {
+                            // 교대형 알람 주기 선택 시 alternatingSteps와 changeStartDate 사용
+                            viewModel.onEvent(
+                                UpdateScheduleEvent.UpdateAlternatingAlarm(
+                                    alternatingSteps = alternatingSteps,
+                                    startDate = changeStartDate
+                                )
                             )
-                        )
-                    }
-                },
+                        }
+                    },
                     enabled = uiState !is UpdateScheduleUiState.Updating,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -388,28 +387,36 @@ private fun DailyTimeSelection(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 변경 적용 날짜 표시 (읽기 전용)
+        // 변경 적용 날짜 설명
         Text(
-            text = "변경 적용 날짜",
+            text = "변경 적용 시점",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Medium
         )
         Spacer(modifier = Modifier.height(8.dp))
 
+        val currentTime = java.time.LocalTime.now()
+        val selectedTime = java.time.LocalTime.of(time.hour, time.minute)
+        val isAfterSelectedTime = currentTime.isAfter(selectedTime)
+        val startDate = if (isAfterSelectedTime) {
+            LocalDate.now().plusDays(1)
+        } else {
+            LocalDate.now()
+        }
+
         Text(
-            text = "${
-                LocalDate.parse(selectedDate).format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
-            } 부터 새로운 시간 적용",
+            text = "${startDate.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))} 부터 새로운 시간 적용",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Medium
         )
 
         Text(
-            text = "이전 알람은 ${
-                LocalDate.parse(selectedDate).minusDays(1)
-                    .format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
-            }까지 기존 시간으로 유지됩니다.",
+            text = if (isAfterSelectedTime) {
+                "현재 시간이 지났으므로 내일부터 변경됩니다."
+            } else {
+                "오늘부터 새로운 시간으로 변경됩니다."
+            },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp)
