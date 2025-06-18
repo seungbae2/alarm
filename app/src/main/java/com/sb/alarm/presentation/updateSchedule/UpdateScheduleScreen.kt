@@ -59,12 +59,6 @@ import androidx.navigation.NavController
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-data class AlarmTime(val hour: Int, val minute: Int)
-data class AlternatingStep(
-    val times: List<AlarmTime>,
-    val durationDays: Int,
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UpdateScheduleScreen(
@@ -79,19 +73,20 @@ fun UpdateScheduleScreen(
     // UI 상태
     var selectedType by remember { mutableIntStateOf(1) } // 1: Daily, 2: Alternating
     var dailyTime by remember { mutableStateOf(AlarmTime(7, 0)) }
+    var changeStartDate by remember { mutableStateOf(selectedDate) } // 기본값은 전달받은 날짜, 변경 가능
     var alternatingSteps by remember {
         mutableStateOf(
             listOf(
                 AlternatingStep(
                     times = listOf(
-                        AlarmTime(7, 0),
-                        AlarmTime(12, 0),
-                        AlarmTime(18, 0)
+                        AlarmTime(7, 0),   // 07:00 AM
+                        AlarmTime(12, 0),  // 12:00 PM
+                        AlarmTime(18, 0)   // 06:00 PM
                     ),
                     durationDays = 2
                 ),
                 AlternatingStep(
-                    times = listOf(AlarmTime(10, 0)),
+                    times = listOf(AlarmTime(10, 0)), // 10:00 AM
                     durationDays = 1
                 )
             )
@@ -163,29 +158,39 @@ fun UpdateScheduleScreen(
                 )
 
                 // 하단 영역: 선택된 주기 알람시간 변경
-                AlarmTimeSettingCard(
-                    selectedType = selectedType,
-                    dailyTime = dailyTime,
-                    onDailyTimeChange = { dailyTime = it },
-                    selectedDate = selectedDate,
-                    alternatingSteps = alternatingSteps,
-                    onAlternatingStepsChange = { alternatingSteps = it }
-                )
+                            AlarmTimeSettingCard(
+                selectedType = selectedType,
+                dailyTime = dailyTime,
+                onDailyTimeChange = { dailyTime = it },
+                selectedDate = selectedDate,
+                changeStartDate = changeStartDate,
+                onChangeStartDateChange = { changeStartDate = it },
+                alternatingSteps = alternatingSteps,
+                onAlternatingStepsChange = { alternatingSteps = it }
+            )
 
                 // 저장 버튼
                 Button(
-                    onClick = { 
-                        if (selectedType == 1) {
-                            // 매일 한번씩 같은시간 선택 시 dailyTime과 전달받은 selectedDate 사용
-                            viewModel.onEvent(
-                                UpdateScheduleEvent.UpdateAlarm(
-                                    hour = dailyTime.hour,
-                                    minute = dailyTime.minute,
-                                    startDate = selectedDate
-                                )
+                                    onClick = { 
+                    if (selectedType == 1) {
+                        // 매일 한번씩 같은시간 선택 시 dailyTime과 전달받은 selectedDate 사용
+                        viewModel.onEvent(
+                            UpdateScheduleEvent.UpdateAlarm(
+                                hour = dailyTime.hour,
+                                minute = dailyTime.minute,
+                                startDate = selectedDate
                             )
-                        }
-                    },
+                        )
+                    } else {
+                        // 교대형 알람 주기 선택 시 alternatingSteps와 changeStartDate 사용
+                        viewModel.onEvent(
+                            UpdateScheduleEvent.UpdateAlternatingAlarm(
+                                alternatingSteps = alternatingSteps,
+                                startDate = changeStartDate
+                            )
+                        )
+                    }
+                },
                     enabled = uiState !is UpdateScheduleUiState.Updating,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -315,6 +320,8 @@ private fun AlarmTimeSettingCard(
     dailyTime: AlarmTime,
     onDailyTimeChange: (AlarmTime) -> Unit,
     selectedDate: String,
+    changeStartDate: String,
+    onChangeStartDateChange: (String) -> Unit,
     alternatingSteps: List<AlternatingStep>,
     onAlternatingStepsChange: (List<AlternatingStep>) -> Unit,
 ) {
@@ -343,8 +350,8 @@ private fun AlarmTimeSettingCard(
             } else {
                 // 타입 2: 매일 횟수 교대형 알람 주기
                 AlternatingCycleSelection(
-                    startDate = selectedDate,
-                    onStartDateChange = { }, // 사용하지 않음
+                    startDate = changeStartDate,
+                    onStartDateChange = onChangeStartDateChange,
                     steps = alternatingSteps,
                     onStepsChange = onAlternatingStepsChange
                 )
@@ -426,7 +433,7 @@ private fun AlternatingCycleSelection(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 시작 날짜
+        // 시작 날짜 선택
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -434,7 +441,17 @@ private fun AlternatingCycleSelection(
             OutlinedButton(
                 onClick = { showDatePicker = true }
             ) {
-                Text(startDate)
+                Text(
+                    try {
+                        // ISO 형식 (yyyy-MM-dd)으로 파싱 시도
+                        LocalDate.parse(startDate).format(
+                            DateTimeFormatter.ofPattern("yyyy.MM.dd")
+                        )
+                    } catch (e: Exception) {
+                        // 이미 점 형식인 경우 그대로 표시
+                        startDate
+                    }
+                )
             }
             Text(" 부터 아래 패턴을 반복")
         }
@@ -467,6 +484,7 @@ private fun AlternatingCycleSelection(
         }
     }
 }
+
 
 @Composable
 private fun StepCard(
@@ -764,9 +782,8 @@ private fun DatePickerDialog(
                         val date = java.time.Instant.ofEpochMilli(millis)
                         val localDate =
                             LocalDate.ofInstant(date, java.time.ZoneId.systemDefault())
-                        val formattedDate = "${localDate.year}.${
-                            localDate.monthValue.toString().padStart(2, '0')
-                        }.${localDate.dayOfMonth.toString().padStart(2, '0')}"
+                        // ISO 형식 (yyyy-MM-dd)으로 반환
+                        val formattedDate = localDate.toString()
                         onDateSelected(formattedDate)
                     }
                 }
