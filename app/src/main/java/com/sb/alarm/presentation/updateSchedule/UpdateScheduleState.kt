@@ -2,11 +2,11 @@ package com.sb.alarm.presentation.updateSchedule
 
 import com.sb.alarm.domain.model.Alarm
 
-data class UpdateScheduleUiState(
-    val alarm: Alarm? = null,
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
+sealed class UpdateScheduleUiState {
+    data object Loading : UpdateScheduleUiState()
+    data class Success(val alarm: Alarm) : UpdateScheduleUiState()
+    data class Error(val message: String) : UpdateScheduleUiState()
+}
 
 sealed class UpdateScheduleEvent {
     data class LoadAlarm(val alarmId: Int) : UpdateScheduleEvent()

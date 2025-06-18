@@ -13,7 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -113,7 +113,7 @@ fun UpdateScheduleScreen(
                 title = { Text("알람 주기 변경") },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.onEvent(UpdateScheduleEvent.NavigateBack) }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로 가기")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로 가기")
                     }
                 }
             )

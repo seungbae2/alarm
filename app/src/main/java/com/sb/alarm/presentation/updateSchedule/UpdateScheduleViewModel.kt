@@ -17,7 +17,7 @@ class UpdateScheduleViewModel @Inject constructor(
     private val alarmRepository: AlarmRepository,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(UpdateScheduleUiState())
+    private val _uiState = MutableStateFlow<UpdateScheduleUiState>(UpdateScheduleUiState.Loading)
     val uiState: StateFlow<UpdateScheduleUiState> = _uiState.asStateFlow()
 
     private val _effect = Channel<UpdateScheduleEffect>(Channel.BUFFERED)
@@ -33,24 +33,15 @@ class UpdateScheduleViewModel @Inject constructor(
     private fun loadAlarm(alarmId: Int) {
         viewModelScope.launch {
             try {
-                _uiState.value = _uiState.value.copy(isLoading = true)
+                _uiState.value = UpdateScheduleUiState.Loading
                 val alarm = alarmRepository.getAlarmById(alarmId)
                 if (alarm != null) {
-                    _uiState.value = _uiState.value.copy(
-                        alarm = alarm,
-                        isLoading = false
-                    )
+                    _uiState.value = UpdateScheduleUiState.Success(alarm)
                 } else {
-                    _uiState.value = _uiState.value.copy(
-                        error = "알람을 찾을 수 없습니다.",
-                        isLoading = false
-                    )
+                    _uiState.value = UpdateScheduleUiState.Error("알람을 찾을 수 없습니다.")
                 }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = "알람 로드 중 오류가 발생했습니다: ${e.message}",
-                    isLoading = false
-                )
+                _uiState.value = UpdateScheduleUiState.Error("알람 로드 중 오류가 발생했습니다: ${e.message}")
             }
         }
     }
