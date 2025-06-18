@@ -34,6 +34,10 @@ class AlarmRepositoryImpl @Inject constructor(
         return alarmDao.insert(alarm.toEntity())
     }
 
+    override suspend fun updateAlarm(alarm: Alarm) {
+        return alarmDao.update(alarm.toEntity())
+    }
+
     override suspend fun updateAlarmActiveStatus(id: Int, isActive: Boolean) {
         alarmDao.updateAlarmActiveStatus(id, isActive)
     }
