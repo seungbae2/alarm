@@ -59,6 +59,7 @@ class UpdateScheduleViewModel @Inject constructor(
             try {
                 val currentState = _uiState.value
                 if (currentState is UpdateScheduleUiState.Success) {
+                    _uiState.value = UpdateScheduleUiState.Updating
                     val originalAlarm = currentState.alarm
 
                     // 시작 날짜를 LocalDate로 파싱하고 타임스탬프로 변환
@@ -89,9 +90,11 @@ class UpdateScheduleViewModel @Inject constructor(
                     _effect.send(UpdateScheduleEffect.ShowToast("${startDate}부터 알람이 새로운 시간으로 변경되었습니다."))
                     _effect.send(UpdateScheduleEffect.UpdateSuccess)
                 } else {
+                    _uiState.value = UpdateScheduleUiState.Error("알람 정보를 불러올 수 없습니다.")
                     _effect.send(UpdateScheduleEffect.ShowToast("알람 정보를 불러올 수 없습니다."))
                 }
             } catch (e: Exception) {
+                _uiState.value = UpdateScheduleUiState.Error("알람 수정 중 오류가 발생했습니다: ${e.message}")
                 _effect.send(UpdateScheduleEffect.ShowToast("알람 수정 중 오류가 발생했습니다: ${e.message}"))
             }
         }

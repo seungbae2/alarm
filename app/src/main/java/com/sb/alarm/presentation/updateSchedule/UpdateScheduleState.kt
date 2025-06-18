@@ -6,6 +6,7 @@ sealed class UpdateScheduleUiState {
     data object Loading : UpdateScheduleUiState()
     data class Success(val alarm: Alarm) : UpdateScheduleUiState()
     data class Error(val message: String) : UpdateScheduleUiState()
+    data object Updating : UpdateScheduleUiState()
 }
 
 sealed class UpdateScheduleEvent {

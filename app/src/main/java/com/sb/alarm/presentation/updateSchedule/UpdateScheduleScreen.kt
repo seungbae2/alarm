@@ -1,6 +1,7 @@
 package com.sb.alarm.presentation.updateSchedule
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -19,6 +22,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,9 +50,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -67,6 +73,7 @@ fun UpdateScheduleScreen(
     navController: NavController,
     viewModel: UpdateScheduleViewModel = hiltViewModel(),
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     // UI 상태
@@ -136,48 +143,84 @@ fun UpdateScheduleScreen(
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
         }
-    ) { paddingValues ->
-        Column(
+        ) { paddingValues ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // 상단 영역: 알람주기 변경
-            AlarmCycleSelectionCard(
-                selectedType = selectedType,
-                onTypeSelected = { selectedType = it }
-            )
-
-            // 하단 영역: 선택된 주기 알람시간 변경
-            AlarmTimeSettingCard(
-                selectedType = selectedType,
-                dailyTime = dailyTime,
-                onDailyTimeChange = { dailyTime = it },
-                selectedDate = selectedDate,
-                alternatingSteps = alternatingSteps,
-                onAlternatingStepsChange = { alternatingSteps = it }
-            )
-
-            // 저장 버튼
-            Button(
-                onClick = {
-                    if (selectedType == 1) {
-                        // 매일 한번씩 같은시간 선택 시 dailyTime과 전달받은 selectedDate 사용
-                        viewModel.onEvent(
-                            UpdateScheduleEvent.UpdateAlarm(
-                                hour = dailyTime.hour,
-                                minute = dailyTime.minute,
-                                startDate = selectedDate
-                            )
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                Text("변경사항 저장")
+                // 상단 영역: 알람주기 변경
+                AlarmCycleSelectionCard(
+                    selectedType = selectedType,
+                    onTypeSelected = { selectedType = it }
+                )
+
+                // 하단 영역: 선택된 주기 알람시간 변경
+                AlarmTimeSettingCard(
+                    selectedType = selectedType,
+                    dailyTime = dailyTime,
+                    onDailyTimeChange = { dailyTime = it },
+                    selectedDate = selectedDate,
+                    alternatingSteps = alternatingSteps,
+                    onAlternatingStepsChange = { alternatingSteps = it }
+                )
+
+                // 저장 버튼
+                Button(
+                    onClick = { 
+                        if (selectedType == 1) {
+                            // 매일 한번씩 같은시간 선택 시 dailyTime과 전달받은 selectedDate 사용
+                            viewModel.onEvent(
+                                UpdateScheduleEvent.UpdateAlarm(
+                                    hour = dailyTime.hour,
+                                    minute = dailyTime.minute,
+                                    startDate = selectedDate
+                                )
+                            )
+                        }
+                    },
+                    enabled = uiState !is UpdateScheduleUiState.Updating,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("변경사항 저장")
+                }
+            }
+
+            // 로딩 인디케이터 (업데이트 중일 때만 표시)
+            if (uiState is UpdateScheduleUiState.Updating) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.3f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(48.dp),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "알람을 업데이트 중입니다...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
             }
         }
     }
