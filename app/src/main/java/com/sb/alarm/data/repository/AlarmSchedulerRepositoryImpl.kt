@@ -211,7 +211,22 @@ class AlarmSchedulerRepositoryImpl @Inject constructor(
                 "Calculating trigger time for alarm ${alarm.id}: current=$currentTime, today=$today, hour=${alarm.hour}, minute=${alarm.minute}, repeatType=${alarm.repeatType}"
             )
 
-            return when (alarm.repeatType) {
+            // endDate 체크: 알람이 이미 종료 날짜를 지났는지 확인
+            alarm.endDate?.let { endTimestamp ->
+                val endDate = Instant.fromEpochMilliseconds(endTimestamp)
+                    .toLocalDateTime(timeZone).date
+                
+                // 오늘이 이미 종료 날짜를 지났다면 알람 스케줄 안함
+                if (today > endDate) {
+                    Log.d(
+                        "AlarmScheduler",
+                        "Alarm ${alarm.id} has passed end date: $endDate, skipping schedule"
+                    )
+                    return 0L
+                }
+            }
+
+            val nextTriggerTime = when (alarm.repeatType) {
                 RepeatType.NONE -> {
                     // 한 번만: startDate의 해당 시간, 하지만 과거 시간이면 다음날로 설정
                     val startDate = Instant.fromEpochMilliseconds(alarm.startDate)
@@ -288,6 +303,19 @@ class AlarmSchedulerRepositoryImpl @Inject constructor(
                     )
                 }
             }
+
+            // 계산된 다음 알람 시간이 endDate를 넘는지 체크
+            alarm.endDate?.let { endTimestamp ->
+                if (nextTriggerTime > endTimestamp) {
+                    Log.d(
+                        "AlarmScheduler",
+                        "Next trigger time (${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(nextTriggerTime))}) is beyond end date, skipping schedule"
+                    )
+                    return 0L
+                }
+            }
+
+            return nextTriggerTime
         } catch (e: Exception) {
             Log.e("AlarmScheduler", "Error calculating next trigger time for alarm ${alarm.id}", e)
             return 0L
