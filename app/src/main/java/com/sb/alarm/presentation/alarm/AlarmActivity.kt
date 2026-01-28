@@ -19,6 +19,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.sb.alarm.MainActivity
+import com.sb.alarm.presentation.service.AlarmService
 import com.sb.alarm.shared.theme.AlarmTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -95,14 +96,22 @@ class AlarmActivity : ComponentActivity() {
                                     stopAlarmSound() // 사용자 액션이므로 알람 중지
                                     navigateToScheduleScreen()
                                 }
+
+                                AlarmEffect.StopAlarmService -> {
+                                    val intent = Intent(this@AlarmActivity, AlarmService::class.java).apply {
+                                        action = AlarmService.ACTION_STOP_ALARM
+                                    }
+                                    startService(intent)
+                                }
                             }
                         }
                     }
 
                     AlarmScreen(
                         uiState = uiState,
+                        isOneMinuteLaterAlarm = isOneMinuteLaterAlarm,
                         onEvent = { event ->
-                            viewModel.onEvent(event, alarmId, isOneMinuteLaterAlarm)
+                            viewModel.onEvent(event)
                         }
                     )
                 }
@@ -143,7 +152,7 @@ class AlarmActivity : ComponentActivity() {
 
     private fun stopAlarmSound() {
         try {
-            viewModel.stopAlarmFromActivity(this)
+            viewModel.requestStopAlarm()
             Log.d("AlarmActivity", "Stop alarm signal sent successfully")
         } catch (e: Exception) {
             Log.e("AlarmActivity", "Failed to stop alarm sound", e)

@@ -51,6 +51,7 @@ import com.sb.alarm.shared.theme.AlarmTheme
 fun AlarmScreen(
     uiState: AlarmUiState,
     onEvent: (AlarmUiEvent) -> Unit,
+    isOneMinuteLaterAlarm: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     BackHandler(enabled = true) {
@@ -78,6 +79,7 @@ fun AlarmScreen(
                     alarm = uiState.alarm,
                     currentTime = uiState.currentTime,
                     currentDate = uiState.currentDate,
+                    isOneMinuteLaterAlarm = isOneMinuteLaterAlarm,
                     onEvent = onEvent
                 )
             }
@@ -94,6 +96,7 @@ private fun AlarmContent(
     alarm: Alarm,
     currentTime: String,
     currentDate: String,
+    isOneMinuteLaterAlarm: Boolean,
     onEvent: (AlarmUiEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -123,7 +126,11 @@ private fun AlarmContent(
         Spacer(modifier = Modifier.height(48.dp))
 
         // 액션 버튼들
-        AlarmActionButtons(onEvent = onEvent)
+        AlarmActionButtons(
+            alarmId = alarm.id,
+            isOneMinuteLaterAlarm = isOneMinuteLaterAlarm,
+            onEvent = onEvent
+        )
     }
 }
 
@@ -299,6 +306,8 @@ private fun AlarmInfoCard(
 
 @Composable
 private fun AlarmActionButtons(
+    alarmId: Int,
+    isOneMinuteLaterAlarm: Boolean,
     onEvent: (AlarmUiEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -309,7 +318,7 @@ private fun AlarmActionButtons(
     ) {
         // 복용 완료 버튼 (가장 중요)
         Button(
-            onClick = { onEvent(AlarmUiEvent.TakeCompleted) },
+            onClick = { onEvent(AlarmUiEvent.TakeCompleted(alarmId, isOneMinuteLaterAlarm)) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -332,7 +341,7 @@ private fun AlarmActionButtons(
         }
         // 무시 버튼
         OutlinedButton(
-            onClick = { onEvent(AlarmUiEvent.Dismiss) },
+            onClick = { onEvent(AlarmUiEvent.Dismiss(alarmId, isOneMinuteLaterAlarm)) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -379,7 +388,8 @@ private fun AlarmScreenPreview() {
 
         AlarmScreen(
             uiState = sampleState,
-            onEvent = { }
+            onEvent = { },
+            isOneMinuteLaterAlarm = false
         )
     }
 }
@@ -390,7 +400,8 @@ private fun AlarmScreenLoadingPreview() {
     AlarmTheme {
         AlarmScreen(
             uiState = AlarmUiState.Loading,
-            onEvent = { }
+            onEvent = { },
+            isOneMinuteLaterAlarm = false
         )
     }
 } 

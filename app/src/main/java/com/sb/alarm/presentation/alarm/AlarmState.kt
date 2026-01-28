@@ -16,11 +16,19 @@ sealed class AlarmUiState {
 }
 
 sealed interface AlarmUiEvent {
-    data object TakeCompleted : AlarmUiEvent
-    data object Dismiss : AlarmUiEvent
+    data class TakeCompleted(
+        val alarmId: Int,
+        val isOneMinuteLaterAlarm: Boolean = false
+    ) : AlarmUiEvent
+
+    data class Dismiss(
+        val alarmId: Int,
+        val isOneMinuteLaterAlarm: Boolean = false
+    ) : AlarmUiEvent
 }
 
 sealed interface AlarmEffect {
     data object NavigateToSchedule : AlarmEffect
     data object NavigateToScheduleAfterDismiss : AlarmEffect
+    data object StopAlarmService : AlarmEffect
 } 
