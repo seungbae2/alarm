@@ -2,6 +2,7 @@ package com.sb.alarm.presentation.updateSchedule
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sb.alarm.domain.model.AlternatingStep
 import com.sb.alarm.domain.usecase.GetAlarmByIdUseCase
 import com.sb.alarm.domain.usecase.UpdateAlternatingAlarmUseCase
 import com.sb.alarm.domain.usecase.UpdateDailyAlarmFromDateUseCase

@@ -3,7 +3,7 @@ package com.sb.alarm.domain.usecase
 import com.sb.alarm.domain.model.Alarm
 import com.sb.alarm.domain.repository.AlarmRepository
 import com.sb.alarm.domain.repository.AlarmSchedulerRepository
-import com.sb.alarm.presentation.updateSchedule.AlternatingStep
+import com.sb.alarm.domain.model.AlternatingStep
 import com.sb.alarm.shared.constants.RepeatType
 import java.time.LocalDate
 import java.time.ZoneId

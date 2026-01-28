@@ -1,13 +1,7 @@
 package com.sb.alarm.presentation.updateSchedule
 
 import com.sb.alarm.domain.model.Alarm
-
-data class AlternatingStep(
-    val times: List<AlarmTime>,
-    val durationDays: Int,
-)
-
-data class AlarmTime(val hour: Int, val minute: Int)
+import com.sb.alarm.domain.model.AlternatingStep
 
 sealed class UpdateScheduleUiState {
     data object Loading : UpdateScheduleUiState()
