@@ -3,6 +3,7 @@ package com.sb.alarm.presentation.schedule
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sb.alarm.domain.model.AlarmWithStatus
+import com.sb.alarm.domain.usecase.AddAlarmResult
 import com.sb.alarm.domain.usecase.AddAlarmUseCase
 import com.sb.alarm.domain.usecase.GetAlarmsByDateUseCase
 import com.sb.alarm.domain.usecase.SetAlarmInOneMinuteUseCase
@@ -12,6 +13,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -46,10 +48,13 @@ class ScheduleViewModel @Inject constructor(
 
     fun loadAlarmsForDate(date: LocalDate) {
         viewModelScope.launch {
-            // 선택된 날짜에 해당하는 알람과 상태 정보를 함께 가져오기
-            getAlarmsByDateUseCase.invoke(date).collect { alarmWithStatusList ->
-                _uiState.value = ScheduleUiState.Success(alarmWithStatusList)
-            }
+            getAlarmsByDateUseCase.invoke(date)
+                .catch { e ->
+                    _uiState.value = ScheduleUiState.Error(e.message ?: "알람 로드 중 오류가 발생했습니다")
+                }
+                .collect { alarmWithStatusList ->
+                    _uiState.value = ScheduleUiState.Success(alarmWithStatusList)
+                }
         }
     }
 
@@ -67,10 +72,16 @@ class ScheduleViewModel @Inject constructor(
                 isActive = true
             )
 
-            if (result == -1L) {
-                _effect.send(ScheduleEffect.ShowToast("동일한 알람이 이미 존재합니다."))
-            } else {
-                _effect.send(ScheduleEffect.ShowToast("알람이 성공적으로 추가되었습니다."))
+            when (result) {
+                is AddAlarmResult.Success -> {
+                    _effect.send(ScheduleEffect.ShowToast("알람이 성공적으로 추가되었습니다."))
+                }
+                is AddAlarmResult.DuplicateAlarm -> {
+                    _effect.send(ScheduleEffect.ShowToast("동일한 알람이 이미 존재합니다."))
+                }
+                is AddAlarmResult.Error -> {
+                    _effect.send(ScheduleEffect.ShowToast("알람 추가 중 오류가 발생했습니다: ${result.exception.message}"))
+                }
             }
         }
     }
