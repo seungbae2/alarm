@@ -6,6 +6,12 @@ import com.sb.alarm.domain.repository.AlarmSchedulerRepository
 import com.sb.alarm.shared.constants.RepeatType
 import javax.inject.Inject
 
+sealed class AddAlarmResult {
+    data class Success(val alarmId: Long) : AddAlarmResult()
+    data object DuplicateAlarm : AddAlarmResult()
+    data class Error(val exception: Throwable) : AddAlarmResult()
+}
+
 class AddAlarmUseCase @Inject constructor(
     private val alarmRepository: AlarmRepository,
     private val alarmSchedulerRepository: AlarmSchedulerRepository,
@@ -21,7 +27,7 @@ class AddAlarmUseCase @Inject constructor(
      * @param startDate 알람 시작일 (밀리초 타임스탬프, null이면 현재 시간)
      * @param endDate 알람 종료일 (밀리초 타임스탬프, null이면 무기한)
      * @param isActive 알람 활성화 여부 (기본값: true)
-     * @return 생성된 알람의 ID, 중복 알람이 있는 경우 -1L 반환
+     * @return AddAlarmResult (Success with alarmId, DuplicateAlarm, or Error)
      */
     suspend operator fun invoke(
         medicationName: String,
@@ -33,41 +39,45 @@ class AddAlarmUseCase @Inject constructor(
         startDate: Long? = null,
         endDate: Long? = null,
         isActive: Boolean = true,
-    ): Long {
-        // 중복 알람 검사
-        val hasDuplicate = alarmRepository.hasDuplicateAlarm(
-            hour = hour,
-            minute = minute,
-            repeatType = repeatType,
-            repeatInterval = repeatInterval,
-            repeatDaysOfWeek = repeatDaysOfWeek
-        )
+    ): AddAlarmResult {
+        return try {
+            // 중복 알람 검사
+            val hasDuplicate = alarmRepository.hasDuplicateAlarm(
+                hour = hour,
+                minute = minute,
+                repeatType = repeatType,
+                repeatInterval = repeatInterval,
+                repeatDaysOfWeek = repeatDaysOfWeek
+            )
 
-        if (hasDuplicate) {
-            return -1L // 중복 알람이 있음을 나타내는 값
+            if (hasDuplicate) {
+                return AddAlarmResult.DuplicateAlarm
+            }
+
+            val alarm = Alarm(
+                medicationName = medicationName,
+                hour = hour,
+                minute = minute,
+                repeatType = repeatType,
+                repeatInterval = repeatInterval,
+                repeatDaysOfWeek = repeatDaysOfWeek,
+                startDate = startDate ?: System.currentTimeMillis(),
+                endDate = endDate,
+                isActive = isActive
+            )
+
+            // 1. 데이터베이스에 알람 저장
+            val alarmId = alarmRepository.addAlarm(alarm)
+
+            // 2. 성공적으로 저장되고 활성화된 알람인 경우 AlarmManager에도 등록
+            if (alarmId > 0 && isActive) {
+                val savedAlarm = alarm.copy(id = alarmId.toInt())
+                alarmSchedulerRepository.schedule(savedAlarm)
+            }
+
+            AddAlarmResult.Success(alarmId)
+        } catch (e: Exception) {
+            AddAlarmResult.Error(e)
         }
-
-        val alarm = Alarm(
-            medicationName = medicationName,
-            hour = hour,
-            minute = minute,
-            repeatType = repeatType,
-            repeatInterval = repeatInterval,
-            repeatDaysOfWeek = repeatDaysOfWeek,
-            startDate = startDate ?: System.currentTimeMillis(),
-            endDate = endDate,
-            isActive = isActive
-        )
-
-        // 1. 데이터베이스에 알람 저장
-        val alarmId = alarmRepository.addAlarm(alarm)
-
-        // 2. 성공적으로 저장되고 활성화된 알람인 경우 AlarmManager에도 등록
-        if (alarmId > 0 && isActive) {
-            val savedAlarm = alarm.copy(id = alarmId.toInt())
-            alarmSchedulerRepository.schedule(savedAlarm)
-        }
-
-        return alarmId
     }
 } 
