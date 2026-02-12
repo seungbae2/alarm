@@ -1,112 +1,90 @@
-# Alarm App
+# Alarm
 
-A reliable Android alarm application. It works accurately even on the
-lock screen and overcomes battery optimizations and system restrictions
-to provide stable alarm functionality.
+A reliable Android alarm application that works accurately on the lock screen and overcomes battery
+optimizations and system restrictions to provide stable alarm functionality.
 
-## ✨ Key Features
+## Key Features
 
-- **Precise Alarms**: Supports exact alarm scheduling on Android 12+
-- **Lock Screen Support**: Displays and dismisses alarms over the lock
-  screen
-- **Battery Optimization Handling**: Works reliably even in battery
-  saver mode
-- **Reboot Recovery**: Automatically restores alarms after device
-  reboot
-- **Persistent Monitoring**: Continuously monitors alarm status in the
-  background
-- **Modern UI**: Built with Jetpack Compose
+- **Precise Scheduling** — Exact alarm scheduling on Android 12+ with `SCHEDULE_EXACT_ALARM`
+- **Lock Screen Support** — Displays and dismisses alarms over the lock screen via dedicated
+  AlarmActivity
+- **Battery Optimization Handling** — Reliable operation even in battery saver and Doze mode
+- **Reboot Recovery** — Automatically restores all alarms after device reboot
+- **Persistent Monitoring** — Background service continuously monitors alarm status
+- **Modern UI** — Built entirely with Jetpack Compose
 
-## 🛠 Tech Stack
+## Tech Stack
 
-### Core Technologies
+| Category     | Technology                                          |
+|--------------|-----------------------------------------------------|
+| Language     | Kotlin (100%)                                       |
+| UI           | Jetpack Compose                                     |
+| Architecture | MVVM, Clean Architecture (Domain-Data-Presentation) |
+| Async        | Coroutines                                          |
+| DI           | Hilt                                                |
+| Database     | Room                                                |
+| Navigation   | Navigation Compose                                  |
+| Date/Time    | Kotlinx DateTime                                    |
 
-- **Kotlin**: 100% Kotlin
-- **Jetpack Compose**: Declarative UI
-- **Coroutines**: Async and concurrency
+## Architecture
 
-### Architecture & Patterns
+Follows Google's recommended app architecture with three layers:
 
-- **Google App Architecture**: Domain--Data--Presentation layers
-- **MVVM Pattern**
-- **Repository Pattern**
+```
+app/src/main/java/com/sb/alarm/
+├── data/                    → Data layer (Room DB, repositories)
+├── domain/
+│   ├── model/               → Alarm domain models
+│   ├── repository/          → Repository interfaces
+│   └── usecase/             → Business logic (schedule, cancel, restore)
+├── presentation/
+│   ├── alarm/               → Alarm trigger UI
+│   ├── schedule/            → Alarm scheduling UI
+│   ├── service/             → AlarmService, PersistentAlarmService
+│   └── receiver/            → AlarmReceiver, BootReceiver
+├── shared/                  → Shared utilities
+└── di/                      → Hilt modules
+```
 
-### Libraries
-
-- **Hilt**: Dependency Injection
-- **Room**: Local database
-- **Navigation Compose**
-- **Kotlinx DateTime**
-
-## 📱 System Requirements
-
-- **Min SDK**: Android 5.0 (API 21)
-- **Target SDK**: Android 14 (API 34)
-- **Compile SDK**: Android 14 (API 34)
-
-## 🏗 Project Structure
-
-    app/src/main/java/com/sb/alarm/
-    ├── MainActivity.kt
-    ├── AlarmApplication.kt
-    ├── AppNavGraph.kt
-    ├── data/
-    ├── domain/
-    │   ├── model/
-    │   ├── repository/
-    │   └── usecase/
-    ├── presentation/
-    │   ├── alarm/
-    │   ├── schedule/
-    │   ├── service/
-    │   └── receiver/
-    ├── shared/
-    └── di/
-
-## 🚀 Installation & Run
-
-### Required Permissions
-
-The app will request:
-
-- **Notification permission**
-- **Ignore battery optimizations**
-- **Draw over other apps**
-- **Exact alarm scheduling**
-
-## 🔧 Main Components
-
-### Services
-
-- **AlarmService**
-- **PersistentAlarmService**
-
-### Receivers
-
-- **AlarmReceiver**
-- **BootReceiver**
-
-### Activities
-
-- **MainActivity**
-- **AlarmActivity**
-
-## 📝 Development Notes
+## System Challenges & Solutions
 
 ### Battery Optimization
 
-- Uses `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
-- Foreground services for critical alarms
-- Persistent monitoring service
+Android aggressively kills background processes. The app uses `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
+and foreground services with persistent notifications to ensure alarm delivery.
 
 ### Lock Screen Compatibility
 
-- Uses `USE_FULL_SCREEN_INTENT`
-- Dedicated AlarmActivity
-- `showOnLockScreen`, `turnScreenOn` flags
+Uses `USE_FULL_SCREEN_INTENT` permission with `showOnLockScreen` and `turnScreenOn` flags on a
+dedicated AlarmActivity to display alarms without unlocking.
 
 ### System Change Handling
 
-- Detects reboot, time changes, updates
-- Restores alarms via BootReceiver
-- Auto-adjusts for timezone changes
+BootReceiver detects device reboot, time zone changes, and system updates, then restores all
+scheduled alarms from the Room database.
+
+## How to Build
+
+### Requirements
+
+- Android Studio Meerkat+
+- JDK 17
+- Min SDK 21 / Target SDK 34
+
+### Steps
+
+```bash
+git clone https://github.com/seungbae2/alarm.git
+cd alarm
+```
+
+Open in Android Studio and sync Gradle. Run on emulator or physical device.
+
+### Required Permissions
+
+The app will request at runtime:
+
+- Notification permission (Android 13+)
+- Ignore battery optimizations
+- Draw over other apps
+- Exact alarm scheduling (Android 12+)
